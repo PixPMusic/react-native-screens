@@ -9,6 +9,7 @@
 #import "RNSStackOperation.h"
 #import "RNSStackScreenComponentEventEmitter.h"
 #import "RNSStackScreenComponentView.h"
+#import "RNSHeaderCoordinator.h"
 #import "RNSViewFrameChangeDelegate.h"
 
 @interface RNSStackNavigationController ()
@@ -56,6 +57,7 @@
   BOOL _performingReactUpdate;
 #if !TARGET_OS_TV
   RNSStackPopGestureDelegate *_edgePopDelegate;
+  NSMutableDictionary<NSString *, UIBarButtonItem *> *_toolbarIconButtons;
 #if RNS_IPHONE_OS_VERSION_AVAILABLE(26_0)
   RNSStackPopGestureDelegate *_contentPopDelegate;
 #endif
@@ -130,11 +132,29 @@
   return NO;
 }
 
+- (void)prepareToolbarForController:(UIViewController *)controller
+{
+#if !TARGET_OS_TV
+  if ([controller.view conformsToProtocol:@protocol(RNSStackScreenProviding)]) {
+    [((id<RNSStackScreenProviding>)controller.view).headerCoordinator applyToolbarItemsInNavigationController:self];
+  }
+#endif
+}
+
+- (void)pushViewController:(UIViewController *)controller animated:(BOOL)animated
+{
+  [self prepareToolbarForController:controller];
+  [super pushViewController:controller animated:animated];
+}
+
 - (UIViewController *)popViewControllerAnimated:(BOOL)animated
 {
   if (self.viewControllers.count > 1 &&
       [self shouldPreventNativePopToController:self.viewControllers[self.viewControllers.count - 2]])
     return nil;
+  if (self.viewControllers.count > 1) {
+    [self prepareToolbarForController:self.viewControllers[self.viewControllers.count - 2]];
+  }
   return [super popViewControllerAnimated:animated];
 }
 
@@ -142,6 +162,7 @@
 {
   if ([self shouldPreventNativePopToController:controller])
     return nil;
+  [self prepareToolbarForController:controller];
   return [super popToViewController:controller animated:animated];
 }
 
@@ -149,6 +170,7 @@
 {
   if ([self shouldPreventNativePopToController:self.viewControllers.firstObject])
     return nil;
+  [self prepareToolbarForController:self.viewControllers.firstObject];
   return [super popToRootViewControllerAnimated:animated];
 }
 
@@ -158,6 +180,21 @@
   _pendingPopOperations = [NSMutableArray array];
   _parentContainerRegistry = [RNSParentContainerItemRegistry new];
 }
+
+#if !TARGET_OS_TV
+- (UIBarButtonItem *)toolbarIconButtonForIdentifier:(NSString *)identifier
+{
+  if (_toolbarIconButtons == nil) {
+    _toolbarIconButtons = [NSMutableDictionary new];
+  }
+  UIBarButtonItem *button = _toolbarIconButtons[identifier];
+  if (button == nil) {
+    button = [[UIBarButtonItem alloc] initWithTitle:nil style:UIBarButtonItemStylePlain target:nil action:nil];
+    _toolbarIconButtons[identifier] = button;
+  }
+  return button;
+}
+#endif
 
 - (void)setAllowsEmptyStack:(BOOL)allowsEmptyStack
 {

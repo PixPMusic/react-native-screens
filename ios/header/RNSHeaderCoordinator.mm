@@ -607,12 +607,28 @@
 #endif // !TARGET_OS_TV
 
 #if !TARGET_OS_TV
+- (void)applyToolbarItemsInNavigationController:(UINavigationController *)navigation
+{
+  [self applyToolbarItemsForController:[self requireScreenController]
+                           navigation:(RNSStackNavigationController *)navigation
+                             activate:YES];
+}
+
 - (void)applyToolbarItemsForController:(UIViewController *)controller
+{
+  RNSStackNavigationController *navigation = [self getNavigationController];
+  [self applyToolbarItemsForController:controller
+                           navigation:navigation
+                             activate:navigation.topViewController == controller];
+}
+
+- (void)applyToolbarItemsForController:(UIViewController *)controller
+                          navigation:(RNSStackNavigationController *)navigation
+                            activate:(BOOL)activate
 {
 #if RNS_IPHONE_OS_VERSION_AVAILABLE(26_0)
   if (@available(iOS 26.0, *)) {
-    RNSStackNavigationController *navigation = [self getNavigationController];
-    if (navigation.topViewController == controller) {
+    if (navigation != nil) {
       NSMutableArray<UIBarButtonItem *> *items = [NSMutableArray new];
       for (UIBarButtonItem *source in _toolbarBarButtonItems) {
         if (source.identifier.length == 0 || !source.image.isSymbolImage || source.customView != nil || source.menu != nil ||
@@ -624,16 +640,10 @@
         // UIKit's integrated-search morph can offset an incoming icon inside its
         // glass until the search field finishes laying out. Retain the actual
         // button for matching plain icon actions, not just its transition ID.
-        UIBarButtonItem *button = nil;
-        for (UIBarButtonItem *visible in navigation.toolbar.items) {
-          if ([visible.identifier isEqualToString:source.identifier] && visible.customView == nil &&
-              visible.menu == nil && visible.style == UIBarButtonItemStylePlain) {
-            button = visible;
-            break;
-          }
-        }
-        if (button == nil) {
-          button = [[UIBarButtonItem alloc] initWithTitle:nil style:UIBarButtonItemStylePlain target:nil action:nil];
+        UIBarButtonItem *button = [navigation toolbarIconButtonForIdentifier:source.identifier];
+        if (!activate && button.image != nil) {
+          [items addObject:button];
+          continue;
         }
         // The screen's source item stays unchanged, so a pop or a cancelled
         // interactive pop can restore that screen's image and action.

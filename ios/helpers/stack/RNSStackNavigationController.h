@@ -17,6 +17,10 @@
 
 @property (nonatomic, readonly, getter=isStackEmpty) BOOL stackEmpty;
 
+#if !TARGET_OS_TV
+- (nonnull UIBarButtonItem *)toolbarIconButtonForIdentifier:(nonnull NSString *)identifier;
+#endif
+
 - (void)enqueuePushOperation:(nonnull UIView<RNSStackScreenProviding> *)stackScreen;
 
 - (void)enqueuePopOperation:(nonnull UIView<RNSStackScreenProviding> *)stackScreen;

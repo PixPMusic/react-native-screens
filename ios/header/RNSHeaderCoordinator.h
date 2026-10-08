@@ -24,6 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 #if !TARGET_OS_TV
 - (void)applyToolbarItems;
+- (void)applyToolbarItemsInNavigationController:(UINavigationController *)navigation;
 #endif
 
 - (void)rebuildItemWithId:(nullable NSString *)itemId;
