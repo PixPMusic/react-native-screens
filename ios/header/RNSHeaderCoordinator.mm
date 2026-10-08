@@ -246,7 +246,7 @@
       } else {
         RCTLogWarn(@"[RNScreens] Item %@ not found for rebuild.", oldBarButtonItem);
       }
-      [controller setToolbarItems:[_toolbarBarButtonItems copy] animated:YES];
+      [controller setToolbarItems:[_toolbarBarButtonItems copy] animated:NO];
       [self updateToolbarVisibilityAnimated:YES];
 #endif // !TARGET_OS_TV
       break;
@@ -391,7 +391,7 @@
 
 #if !TARGET_OS_TV
   [self applySearchBar:nil forController:controller];
-  [controller setToolbarItems:nil animated:YES];
+  [controller setToolbarItems:nil animated:NO];
   navItem.prompt = nil;
   navItem.hidesBackButton = NO;
   navItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
@@ -606,7 +606,9 @@
   UINavigationItem *navItem = controller.navigationItem;
 
 #if !TARGET_OS_TV
-  [controller setToolbarItems:[_toolbarBarButtonItems copy] animated:YES];
+  // The navigation controller already animates toolbar contents during a push/pop.
+  // Animating each Fabric rebuild again hides custom items until a second fade completes.
+  [controller setToolbarItems:[_toolbarBarButtonItems copy] animated:NO];
   navItem.leftItemsSupplementBackButton = YES;
 #endif // !TARGET_OS_TV
 
