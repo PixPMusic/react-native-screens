@@ -157,6 +157,9 @@
   }
 
   [self applyConfigPropertiesForController:[self requireScreenController]];
+#if !TARGET_OS_TV
+  [self applyToolbarItemsForController:[self requireScreenController]];
+#endif
   [self updateNavigationBarVisibilityAnimated:YES];
 #if !TARGET_OS_TV
   [self updateToolbarVisibilityAnimated:YES];
@@ -165,6 +168,11 @@
 }
 
 #if !TARGET_OS_TV
+- (void)applyToolbarItems
+{
+  [self applyToolbarItemsForController:[self requireScreenController]];
+}
+
 - (void)updateToolbarVisibilityAnimated:(BOOL)animated
 {
   RNSStackNavigationController *navController = [self getNavigationController];
@@ -246,7 +254,7 @@
       } else {
         RCTLogWarn(@"[RNScreens] Item %@ not found for rebuild.", oldBarButtonItem);
       }
-      [controller setToolbarItems:[_toolbarBarButtonItems copy] animated:NO];
+      [self applyToolbarItemsForController:controller];
       [self updateToolbarVisibilityAnimated:YES];
 #endif // !TARGET_OS_TV
       break;
@@ -598,6 +606,61 @@
 }
 #endif // !TARGET_OS_TV
 
+#if !TARGET_OS_TV
+- (void)applyToolbarItemsForController:(UIViewController *)controller
+{
+#if RNS_IPHONE_OS_VERSION_AVAILABLE(26_0)
+  if (@available(iOS 26.0, *)) {
+    RNSStackNavigationController *navigation = [self getNavigationController];
+    if (navigation.topViewController == controller) {
+      NSMutableArray<UIBarButtonItem *> *items = [NSMutableArray new];
+      for (UIBarButtonItem *source in _toolbarBarButtonItems) {
+        if (source.identifier.length == 0 || !source.image.isSymbolImage || source.customView != nil || source.menu != nil ||
+            source.style != UIBarButtonItemStylePlain) {
+          [items addObject:source];
+          continue;
+        }
+
+        // UIKit's integrated-search morph can offset an incoming icon inside its
+        // glass until the search field finishes laying out. Retain the actual
+        // button for matching plain icon actions, not just its transition ID.
+        UIBarButtonItem *button = nil;
+        for (UIBarButtonItem *visible in navigation.toolbar.items) {
+          if ([visible.identifier isEqualToString:source.identifier] && visible.customView == nil &&
+              visible.menu == nil && visible.style == UIBarButtonItemStylePlain) {
+            button = visible;
+            break;
+          }
+        }
+        if (button == nil) {
+          button = [[UIBarButtonItem alloc] initWithTitle:nil style:UIBarButtonItemStylePlain target:nil action:nil];
+        }
+        // The screen's source item stays unchanged, so a pop or a cancelled
+        // interactive pop can restore that screen's image and action.
+        button.primaryAction = source.primaryAction;
+        button.target = source.target;
+        button.action = source.action;
+        button.title = source.title;
+        button.image = source.image;
+        button.tintColor = source.tintColor;
+        button.enabled = source.enabled;
+        button.hidden = source.hidden;
+        button.selected = source.selected;
+        button.accessibilityLabel = source.accessibilityLabel;
+        button.identifier = source.identifier;
+        button.hidesSharedBackground = source.hidesSharedBackground;
+        button.symbolAnimationEnabled = NO;
+        [items addObject:button];
+      }
+      [controller setToolbarItems:items animated:NO];
+      return;
+    }
+  }
+#endif
+  [controller setToolbarItems:[_toolbarBarButtonItems copy] animated:NO];
+}
+#endif
+
 - (void)applyItemsWithTitleView:(nullable UIView *)titleView
                    subtitleView:(nullable UIView *)subtitleView
               largeSubtitleView:(nullable UIView *)largeSubtitleView
@@ -608,7 +671,7 @@
 #if !TARGET_OS_TV
   // The navigation controller already animates toolbar contents during a push/pop.
   // Animating each Fabric rebuild again hides custom items until a second fade completes.
-  [controller setToolbarItems:[_toolbarBarButtonItems copy] animated:NO];
+  [self applyToolbarItemsForController:controller];
   navItem.leftItemsSupplementBackButton = YES;
 #endif // !TARGET_OS_TV
 

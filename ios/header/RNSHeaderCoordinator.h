@@ -22,6 +22,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)applyConfigProperties;
 
+#if !TARGET_OS_TV
+- (void)applyToolbarItems;
+#endif
+
 - (void)rebuildItemWithId:(nullable NSString *)itemId;
 
 - (void)reapplyMenuForItemWithId:(nullable NSString *)itemId;
