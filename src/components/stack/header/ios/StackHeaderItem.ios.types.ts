@@ -24,7 +24,6 @@ export type StackHeaderItemProps = {
   visibilityPriority?: StackHeaderItemVisibilityPriorityIOS | undefined;
   variant?: 'plain' | 'done' | 'prominent' | undefined;
   tintColor?: ColorValue | undefined;
-  width?: number | undefined;
   title?: string | undefined;
   icon?: PlatformIconIOS | undefined;
   render?: (() => ReactElement) | undefined;

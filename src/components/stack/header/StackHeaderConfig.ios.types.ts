@@ -222,12 +222,10 @@ export interface StackHeaderInlineItemIOS
     SupportsAxisBehaviorIOS,
     SupportsSharedBackgroundIOS,
     SupportsVisibilityPriorityIOS {
-  /** Native button appearance. Prominent buttons display both the title and icon. */
+  /** Native bar-button appearance. UIKit owns the layout and transition. */
   variant?: 'plain' | 'done' | 'prominent' | undefined;
   /** Button tint, including the background of a prominent button. */
   tintColor?: ColorValue | undefined;
-  /** Preferred button width. A positive width fixes the prominent button's size. */
-  width?: number | undefined;
   /** Uses UIKit's search placement item on iOS 26 and later. */
   searchBarPlacement?: boolean | undefined;
   /**

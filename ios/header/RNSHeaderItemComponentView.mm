@@ -128,11 +128,6 @@ namespace react = facebook::react;
   return RCTUIColorFromSharedColor(std::static_pointer_cast<const react::RNSHeaderItemIOSProps>(_props)->tintColor);
 }
 
-- (CGFloat)width
-{
-  return std::static_pointer_cast<const react::RNSHeaderItemIOSProps>(_props)->width;
-}
-
 - (nullable UIView *)customView
 {
   return self.subviews.count > 0 ? self : nil;
@@ -221,7 +216,7 @@ RNS_IGNORE_SUPER_CALL_END
 
   BOOL needsUpdate = oldItemProps.searchBarPlacement != newItemProps.searchBarPlacement ||
       oldItemProps.axisBehavior != newItemProps.axisBehavior || oldItemProps.variant != newItemProps.variant ||
-      oldItemProps.tintColor != newItemProps.tintColor || oldItemProps.width != newItemProps.width;
+      oldItemProps.tintColor != newItemProps.tintColor;
   BOOL menuDidChange = NO;
 
   if (oldItemProps.itemId != newItemProps.itemId) {

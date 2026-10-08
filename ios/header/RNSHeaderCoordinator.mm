@@ -680,8 +680,7 @@
     if (item.identifier != nil) {
       barButtonItem.identifier = item.identifier;
     }
-    barButtonItem.hidesSharedBackground = item.hidesSharedBackground ||
-        (item.customView == nil && item.menu == nil && [item.variant isEqualToString:@"prominent"]);
+    barButtonItem.hidesSharedBackground = item.hidesSharedBackground;
   }
 #endif // RNS_IPHONE_OS_VERSION_AVAILABLE(26_0)
 

@@ -18,7 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, nullable) NSString *title;
 @property (nonatomic, readonly) NSString *variant;
 @property (nonatomic, readonly, nullable) UIColor *tintColor;
-@property (nonatomic, readonly) CGFloat width;
 @property (nonatomic, readonly, nullable) RNSHeaderIconData *icon;
 @property (nonatomic, readonly, nullable) RNSHeaderMenuData *menu;
 @property (nonatomic, readonly, nullable) UIView *customView;
