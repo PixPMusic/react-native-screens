@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import type { ColorValue } from 'react-native';
 import type { PlatformIconIOS } from '../../../shared/types';
 import type { StackHeaderMenuIOS } from './StackHeaderMenu.ios.types';
 import type { StackHeaderItemAxisBehaviorIOS } from '../StackHeaderConfig.ios.types';
@@ -21,6 +22,9 @@ export type StackHeaderItemProps = {
   searchBarPlacement?: boolean | undefined;
   axisBehavior?: StackHeaderItemAxisBehaviorIOS | undefined;
   visibilityPriority?: StackHeaderItemVisibilityPriorityIOS | undefined;
+  variant?: 'plain' | 'done' | 'prominent' | undefined;
+  tintColor?: ColorValue | undefined;
+  width?: number | undefined;
   title?: string | undefined;
   icon?: PlatformIconIOS | undefined;
   render?: (() => ReactElement) | undefined;

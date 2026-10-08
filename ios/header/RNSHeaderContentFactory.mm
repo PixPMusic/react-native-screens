@@ -13,7 +13,13 @@
                                 withImageLoader:(id<RNSImageLoading>)imageLoader
 {
   UIBarButtonItem *barButtonItem;
-  if (item.customView != nil) {
+  if (item.customView == nil && item.menu == nil && [item.variant isEqualToString:@"prominent"]) {
+    // Build this synchronously with the other UIKit items. A hosted React/SwiftUI
+    // view needs another Fabric layout before UIKit can include it in the transition.
+    barButtonItem = [self prominentBarButtonItemForHeaderItem:item
+                                     withHeaderEventsDelegate:headerEventsDelegate
+                                              withImageLoader:imageLoader];
+  } else if (item.customView != nil) {
 #if RNS_IPHONE_OS_VERSION_AVAILABLE(26_0)
     if (@available(iOS 26.0, *)) {
       barButtonItem = [[UIBarButtonItem alloc]
@@ -31,6 +37,71 @@
                                           withImageLoader:imageLoader];
   }
 
+  barButtonItem.tintColor = item.tintColor;
+  if (item.width > 0)
+    barButtonItem.width = item.width;
+  if ([item.variant isEqualToString:@"done"]) {
+    barButtonItem.style = UIBarButtonItemStyleDone;
+  }
+
+  return barButtonItem;
+}
+
++ (UIBarButtonItem *)prominentBarButtonItemForHeaderItem:(id<RNSHeaderItemDataProviding>)item
+                                withHeaderEventsDelegate:(id<RNSHeaderEventsDelegate>)headerEventsDelegate
+                                         withImageLoader:(id<RNSImageLoading>)imageLoader
+{
+  UIButtonConfiguration *configuration;
+#if RNS_IPHONE_OS_VERSION_AVAILABLE(26_0) && !TARGET_OS_VISION
+  if (@available(iOS 26.0, tvOS 26.0, *)) {
+    configuration = [UIButtonConfiguration prominentGlassButtonConfiguration];
+  } else
+#endif
+  {
+    configuration = [UIButtonConfiguration filledButtonConfiguration];
+  }
+  configuration.title = item.title;
+  configuration.baseBackgroundColor = item.tintColor;
+  configuration.baseForegroundColor = UIColor.systemBackgroundColor;
+  configuration.cornerStyle = UIButtonConfigurationCornerStyleCapsule;
+  configuration.buttonSize = UIButtonConfigurationSizeLarge;
+  configuration.imagePadding = 8;
+  configuration.contentInsets = NSDirectionalEdgeInsetsMake(0, 16, 0, 16);
+
+  __weak id<RNSHeaderEventsDelegate> weakDelegate = headerEventsDelegate;
+  NSString *itemId = item.itemId;
+  UIAction *pressAction = [UIAction actionWithTitle:item.title
+                                              image:nil
+                                         identifier:nil
+                                            handler:^(__kindof UIAction *_Nonnull action) {
+                                              [weakDelegate didPressHeaderItem:itemId];
+                                            }];
+  UIButton *button = [UIButton buttonWithConfiguration:configuration primaryAction:pressAction];
+  button.enabled = item.respondsToOnPress;
+  button.frame = CGRectMake(0, 0, item.width > 0 ? item.width : button.intrinsicContentSize.width, 44);
+  button.translatesAutoresizingMaskIntoConstraints = NO;
+  [button.heightAnchor constraintEqualToConstant:44].active = YES;
+  if (item.width > 0) {
+    [button.widthAnchor constraintEqualToConstant:item.width].active = YES;
+  }
+
+  if (item.icon != nil) {
+    __weak UIButton *weakButton = button;
+    UIImage *syncImage = [RNSHeaderIconResolver resolveIcon:item.icon
+                                            withImageLoader:imageLoader
+                                       asyncCompletionBlock:^(UIImage *_Nullable image) {
+                                         UIButton *button = weakButton;
+                                         if (button == nil)
+                                           return;
+                                         UIButtonConfiguration *updated = [button.configuration copy];
+                                         updated.image = image;
+                                         button.configuration = updated;
+                                       }];
+    configuration.image = syncImage ? syncImage : [RNSHeaderIconResolver placeholderImageForIcon:item.icon];
+    button.configuration = configuration;
+  }
+
+  UIBarButtonItem *barButtonItem = [[UIBarButtonItem alloc] initWithCustomView:button];
   return barButtonItem;
 }
 

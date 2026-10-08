@@ -111,6 +111,28 @@ namespace react = facebook::react;
   }
 }
 
+- (NSString *)variant
+{
+  switch (std::static_pointer_cast<const react::RNSHeaderItemIOSProps>(_props)->variant) {
+    case react::RNSHeaderItemIOSVariant::Plain:
+      return @"plain";
+    case react::RNSHeaderItemIOSVariant::Done:
+      return @"done";
+    case react::RNSHeaderItemIOSVariant::Prominent:
+      return @"prominent";
+  }
+}
+
+- (nullable UIColor *)tintColor
+{
+  return RCTUIColorFromSharedColor(std::static_pointer_cast<const react::RNSHeaderItemIOSProps>(_props)->tintColor);
+}
+
+- (CGFloat)width
+{
+  return std::static_pointer_cast<const react::RNSHeaderItemIOSProps>(_props)->width;
+}
+
 - (nullable UIView *)customView
 {
   return self.subviews.count > 0 ? self : nil;
@@ -198,7 +220,8 @@ RNS_IGNORE_SUPER_CALL_END
   const auto &oldItemProps = *std::static_pointer_cast<const react::RNSHeaderItemIOSProps>(_props);
 
   BOOL needsUpdate = oldItemProps.searchBarPlacement != newItemProps.searchBarPlacement ||
-      oldItemProps.axisBehavior != newItemProps.axisBehavior;
+      oldItemProps.axisBehavior != newItemProps.axisBehavior || oldItemProps.variant != newItemProps.variant ||
+      oldItemProps.tintColor != newItemProps.tintColor || oldItemProps.width != newItemProps.width;
   BOOL menuDidChange = NO;
 
   if (oldItemProps.itemId != newItemProps.itemId) {
@@ -214,8 +237,7 @@ RNS_IGNORE_SUPER_CALL_END
     if (_didSetHeaderItemPlacement) {
       RCTLogWarn(@"[RNScreens] Changing header item placement at runtime is not supported");
     } else {
-      _placement =
-          rnscreens::conversion::convert<RNSHeaderItemPlacement>(newItemProps.placement);
+      _placement = rnscreens::conversion::convert<RNSHeaderItemPlacement>(newItemProps.placement);
     }
   }
   _didSetHeaderItemPlacement = YES;

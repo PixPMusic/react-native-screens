@@ -2,6 +2,7 @@
 
 import type {
   CodegenTypes as CT,
+  ColorValue,
   HostComponent,
   ImageResolvedAssetSource,
   ViewProps,
@@ -84,6 +85,9 @@ export interface NativeProps extends ViewProps {
     StackHeaderItemVisibilityPriorityIOS,
     'standard'
   >;
+  variant?: CT.WithDefault<'plain' | 'done' | 'prominent', 'plain'>;
+  tintColor?: ColorValue | undefined;
+  width?: CT.WithDefault<CT.Double, 0>;
   title?: string | undefined;
   icon?: UnsafeMixed<PlatformIconIOS> | undefined;
   menu?: UnsafeMixed<StackHeaderMenuIOS> | undefined;
