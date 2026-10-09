@@ -32,6 +32,7 @@
   }
 
   barButtonItem.tintColor = item.tintColor;
+  barButtonItem.width = MAX(0, item.width);
   if ([item.variant isEqualToString:@"prominent"]) {
 #if RNS_IPHONE_OS_VERSION_AVAILABLE(26_0)
     if (@available(iOS 26.0, *)) {

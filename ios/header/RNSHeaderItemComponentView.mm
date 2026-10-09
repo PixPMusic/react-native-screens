@@ -133,6 +133,11 @@ namespace react = facebook::react;
   return self.subviews.count > 0 ? self : nil;
 }
 
+- (CGFloat)width
+{
+  return std::static_pointer_cast<const react::RNSHeaderItemIOSProps>(_props)->width;
+}
+
 #pragma mark - RNSViewFrameChangeDelegate
 
 - (void)viewFrameDidChange:(nonnull UINavigationBar *)navigationBar
@@ -216,7 +221,7 @@ RNS_IGNORE_SUPER_CALL_END
 
   BOOL needsUpdate = oldItemProps.searchBarPlacement != newItemProps.searchBarPlacement ||
       oldItemProps.axisBehavior != newItemProps.axisBehavior || oldItemProps.variant != newItemProps.variant ||
-      oldItemProps.tintColor != newItemProps.tintColor;
+      oldItemProps.tintColor != newItemProps.tintColor || oldItemProps.width != newItemProps.width;
   BOOL menuDidChange = NO;
 
   if (oldItemProps.itemId != newItemProps.itemId) {
