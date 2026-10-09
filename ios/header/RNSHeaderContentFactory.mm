@@ -46,6 +46,40 @@
     barButtonItem.style = UIBarButtonItemStyleDone;
   }
 
+  if (item.width > 0 && item.customView == nil) {
+    // UIKit's iOS 26 bar renderer ignores width on ordinary title items.
+    // A native UIButton preserves system styling while honoring the constraint.
+    BOOL prominent = ![item.variant isEqualToString:@"plain"];
+    UIButtonConfiguration *configuration;
+#if RNS_IPHONE_OS_VERSION_AVAILABLE(26_0) && !TARGET_OS_VISION
+    if (@available(iOS 26.0, tvOS 26.0, *)) {
+      configuration = prominent ? [UIButtonConfiguration prominentGlassButtonConfiguration]
+                                : [UIButtonConfiguration glassButtonConfiguration];
+    } else
+#endif
+    {
+      configuration = prominent ? [UIButtonConfiguration filledButtonConfiguration]
+                                : [UIButtonConfiguration plainButtonConfiguration];
+      configuration.cornerStyle = UIButtonConfigurationCornerStyleCapsule;
+    }
+    configuration.title = item.title;
+    configuration.image = barButtonItem.image;
+    if (prominent && item.tintColor != nil) {
+      configuration.baseBackgroundColor = item.tintColor;
+      CGFloat red = 0, green = 0, blue = 0, alpha = 0;
+      [item.tintColor getRed:&red green:&green blue:&blue alpha:&alpha];
+      configuration.baseForegroundColor = red + green + blue > 1.5 ? UIColor.blackColor : UIColor.whiteColor;
+    }
+    UIButton *button = [UIButton buttonWithConfiguration:configuration primaryAction:barButtonItem.primaryAction];
+    button.tintColor = item.tintColor;
+    button.enabled = item.respondsToOnPress || item.menu != nil;
+    button.showsMenuAsPrimaryAction = !item.respondsToOnPress && item.menu != nil;
+    button.translatesAutoresizingMaskIntoConstraints = NO;
+    [button.widthAnchor constraintEqualToConstant:item.width].active = YES;
+    [button.heightAnchor constraintEqualToConstant:48].active = YES;
+    barButtonItem.customView = button;
+  }
+
   return barButtonItem;
 }
 
@@ -81,6 +115,12 @@
                                            return;
                                          }
                                          weakBarButtonItem.image = image;
+                                         if ([weakBarButtonItem.customView isKindOfClass:UIButton.class]) {
+                                           UIButton *button = (UIButton *)weakBarButtonItem.customView;
+                                           UIButtonConfiguration *configuration = button.configuration;
+                                           configuration.image = image;
+                                           button.configuration = configuration;
+                                         }
                                        }];
     barButtonItem.image = syncImage ? syncImage : [RNSHeaderIconResolver placeholderImageForIcon:item.icon];
   }

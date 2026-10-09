@@ -22,6 +22,10 @@
         initialSingleSelectionStateClaimed:NULL
                            withImageLoader:imageLoader
                    menuInvalidatedCallback:onMenuInvalidated];
+    if ([item.customView isKindOfClass:UIButton.class]) {
+      ((UIButton *)item.customView).menu = item.menu;
+      ((UIButton *)item.customView).enabled = YES;
+    }
   }
 #endif // !TARGET_OS_TV || __TV_OS_VERSION_MAX_ALLOWED >= 170000
 }
