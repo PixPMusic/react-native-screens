@@ -46,7 +46,7 @@
     barButtonItem.style = UIBarButtonItemStyleDone;
   }
 
-  if (item.width > 0 && item.customView == nil) {
+  if ((item.width > 0 || item.height > 0) && item.customView == nil) {
     // UIKit's iOS 26 bar renderer ignores width on ordinary title items.
     // A native UIButton preserves system styling while honoring the constraint.
     BOOL prominent = ![item.variant isEqualToString:@"plain"];
@@ -62,7 +62,7 @@
                                 : [UIButtonConfiguration plainButtonConfiguration];
       configuration.cornerStyle = UIButtonConfigurationCornerStyleCapsule;
     }
-    configuration.title = item.title;
+    configuration.title = item.icon == nil ? item.title : nil;
     configuration.image = barButtonItem.image;
     if (prominent && item.tintColor != nil) {
       configuration.baseBackgroundColor = item.tintColor;
@@ -71,12 +71,15 @@
       configuration.baseForegroundColor = red + green + blue > 1.5 ? UIColor.blackColor : UIColor.whiteColor;
     }
     UIButton *button = [UIButton buttonWithConfiguration:configuration primaryAction:barButtonItem.primaryAction];
+    button.accessibilityLabel = item.title;
     button.tintColor = item.tintColor;
     button.enabled = item.respondsToOnPress || item.menu != nil;
     button.showsMenuAsPrimaryAction = !item.respondsToOnPress && item.menu != nil;
     button.translatesAutoresizingMaskIntoConstraints = NO;
-    [button.widthAnchor constraintEqualToConstant:item.width].active = YES;
-    [button.heightAnchor constraintEqualToConstant:48].active = YES;
+    if (item.width > 0) {
+      [button.widthAnchor constraintEqualToConstant:item.width].active = YES;
+    }
+    [button.heightAnchor constraintEqualToConstant:item.height > 0 ? item.height : 48].active = YES;
     barButtonItem.customView = button;
   }
 

@@ -228,6 +228,8 @@ export interface StackHeaderInlineItemIOS
   tintColor?: ColorValue | undefined;
   /** Preferred bar-button width in points. Zero uses UIKit's intrinsic width. */
   width?: number | undefined;
+  /** Preferred native button height. Zero uses the default. */
+  height?: number | undefined;
   /** Uses UIKit's search placement item on iOS 26 and later. */
   searchBarPlacement?: boolean | undefined;
   /**

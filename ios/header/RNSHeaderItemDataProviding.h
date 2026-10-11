@@ -5,8 +5,8 @@
 #import "RNSHeaderIconData.h"
 #import "RNSHeaderItemAxisBehavior.h"
 #import "RNSHeaderItemPlacement.h"
-#import "RNSHeaderMenuData.h"
 #import "RNSHeaderItemVisibilityPriority.h"
+#import "RNSHeaderMenuData.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -19,6 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSString *variant;
 @property (nonatomic, readonly, nullable) UIColor *tintColor;
 @property (nonatomic, readonly) CGFloat width;
+@property (nonatomic, readonly) CGFloat height;
 @property (nonatomic, readonly, nullable) RNSHeaderIconData *icon;
 @property (nonatomic, readonly, nullable) RNSHeaderMenuData *menu;
 @property (nonatomic, readonly, nullable) UIView *customView;

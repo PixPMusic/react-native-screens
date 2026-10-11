@@ -615,29 +615,29 @@
 - (void)applyToolbarItemsInNavigationController:(UINavigationController *)navigation
 {
   [self applyToolbarItemsForController:[self requireScreenController]
-                           navigation:(RNSStackNavigationController *)navigation
-                             activate:YES];
+                            navigation:(RNSStackNavigationController *)navigation
+                              activate:YES];
 }
 
 - (void)applyToolbarItemsForController:(UIViewController *)controller
 {
   RNSStackNavigationController *navigation = [self getNavigationController];
   [self applyToolbarItemsForController:controller
-                           navigation:navigation
-                             activate:navigation.topViewController == controller];
+                            navigation:navigation
+                              activate:navigation.topViewController == controller];
 }
 
 - (void)applyToolbarItemsForController:(UIViewController *)controller
-                          navigation:(RNSStackNavigationController *)navigation
-                            activate:(BOOL)activate
+                            navigation:(RNSStackNavigationController *)navigation
+                              activate:(BOOL)activate
 {
 #if RNS_IPHONE_OS_VERSION_AVAILABLE(26_0)
   if (@available(iOS 26.0, *)) {
     if (navigation != nil) {
       NSMutableArray<UIBarButtonItem *> *items = [NSMutableArray new];
       for (UIBarButtonItem *source in _toolbarBarButtonItems) {
-        if (source.identifier.length == 0 || !source.image.isSymbolImage || source.customView != nil || source.menu != nil ||
-            source.style != UIBarButtonItemStylePlain) {
+        if (source.identifier.length == 0 || !source.image.isSymbolImage || source.customView != nil ||
+            source.menu != nil || source.style != UIBarButtonItemStylePlain) {
           [items addObject:source];
           continue;
         }
@@ -759,7 +759,7 @@
       barButtonItem.identifier = item.identifier;
     }
     barButtonItem.hidesSharedBackground = item.hidesSharedBackground ||
-        (item.width > 0 && [barButtonItem.customView isKindOfClass:UIButton.class]);
+        ((item.width > 0 || item.height > 0) && [barButtonItem.customView isKindOfClass:UIButton.class]);
   }
 #endif // RNS_IPHONE_OS_VERSION_AVAILABLE(26_0)
 

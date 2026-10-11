@@ -25,6 +25,8 @@ export type StackHeaderItemProps = {
   variant?: 'plain' | 'done' | 'prominent' | undefined;
   tintColor?: ColorValue | undefined;
   width?: number | undefined;
+  /** Preferred native button height. Zero uses the default. */
+  height?: number | undefined;
   title?: string | undefined;
   icon?: PlatformIconIOS | undefined;
   render?: (() => ReactElement) | undefined;
