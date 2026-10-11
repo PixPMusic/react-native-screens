@@ -62,7 +62,8 @@
                                 : [UIButtonConfiguration plainButtonConfiguration];
       configuration.cornerStyle = UIButtonConfigurationCornerStyleCapsule;
     }
-    configuration.title = item.icon == nil ? item.title : nil;
+    // An explicit empty title keeps UIAction from restoring its accessibility title.
+    configuration.title = item.icon == nil ? item.title : @"";
     configuration.image = barButtonItem.image;
     if (prominent && item.tintColor != nil) {
       configuration.baseBackgroundColor = item.tintColor;
