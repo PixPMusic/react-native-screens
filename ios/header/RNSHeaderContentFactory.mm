@@ -31,20 +31,10 @@
                                           withImageLoader:imageLoader];
   }
 
+  barButtonItem.enabled = !item.disabled;
   barButtonItem.tintColor = item.tintColor;
   barButtonItem.width = MAX(0, item.width);
-  if ([item.variant isEqualToString:@"prominent"]) {
-#if RNS_IPHONE_OS_VERSION_AVAILABLE(26_0)
-    if (@available(iOS 26.0, *)) {
-      barButtonItem.style = UIBarButtonItemStyleProminent;
-    } else
-#endif
-    {
-      barButtonItem.style = UIBarButtonItemStyleDone;
-    }
-  } else if ([item.variant isEqualToString:@"done"]) {
-    barButtonItem.style = UIBarButtonItemStyleDone;
-  }
+  barButtonItem.style = item.style;
 
   if ((item.width > 0 || item.height > 0) && item.customView == nil) {
     // UIKit's iOS 26 bar renderer ignores width on ordinary title items.
@@ -79,7 +69,7 @@
     button.configuration = configuration;
     button.accessibilityLabel = item.title;
     button.tintColor = item.tintColor;
-    button.enabled = item.respondsToOnPress || item.menu != nil;
+    button.enabled = !item.disabled && (item.respondsToOnPress || item.menu != nil);
     button.showsMenuAsPrimaryAction = !item.respondsToOnPress && item.menu != nil;
     button.translatesAutoresizingMaskIntoConstraints = NO;
     if (item.width > 0) {

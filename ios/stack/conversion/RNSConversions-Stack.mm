@@ -1,4 +1,5 @@
 #import "RNSConversions-Stack.h"
+#import "RNSDefines.h"
 
 namespace rnscreens::conversion {
 
@@ -44,6 +45,24 @@ RNSHeaderItemPlacement convert(react::RNSHeaderItemIOSPlacement placement)
   }
 }
 
+UIBarButtonItemStyle UIBarButtonItemStyleFromReactRNSHeaderItemIOSVariant(react::RNSHeaderItemIOSVariant variant)
+{
+  switch (variant) {
+    case react::RNSHeaderItemIOSVariant::Plain:
+      return UIBarButtonItemStylePlain;
+    case react::RNSHeaderItemIOSVariant::Done:
+      return UIBarButtonItemStyleDone;
+    case react::RNSHeaderItemIOSVariant::Prominent:
+#if RNS_IPHONE_OS_VERSION_AVAILABLE(26_0)
+      if (@available(iOS 26.0, *)) {
+        return UIBarButtonItemStyleProminent;
+      }
+#endif // RNS_IPHONE_OS_VERSION_AVAILABLE(26_0)
+      // Bold text look, closest counterpart of prominent style before iOS 26
+      return UIBarButtonItemStyleDone;
+  }
+}
+
 template <>
 RNSHeaderItemSpacerPlacement convert(react::RNSHeaderItemSpacerIOSPlacement placement)
 {
@@ -70,7 +89,41 @@ UINavigationItemBackButtonDisplayMode convert(react::RNSHeaderConfigIOSBackButto
   }
 }
 
-RNSStackScreenActivityMode RNSStackScreenActivityModeFromReactRNSStackScreenActivityMode(react::RNSStackScreenActivityMode mode) { return convert<RNSStackScreenActivityMode>(mode); }
+#if RNS_IPHONE_OS_VERSION_AVAILABLE(27_0)
+
+UIBarMinimizationBehavior UIBarMinimizationBehaviorFromReactRNSHeaderConfigIOSMinimizationBehavior(
+    react::RNSHeaderConfigIOSMinimizationBehavior minimizationBehavior)
+{
+  switch (minimizationBehavior) {
+    case react::RNSHeaderConfigIOSMinimizationBehavior::Automatic:
+      return UIBarMinimizationBehaviorAutomatic;
+    case react::RNSHeaderConfigIOSMinimizationBehavior::Never:
+      return UIBarMinimizationBehaviorNever;
+    case react::RNSHeaderConfigIOSMinimizationBehavior::OnScrollDown:
+      return UIBarMinimizationBehaviorOnScrollDown;
+    case react::RNSHeaderConfigIOSMinimizationBehavior::OnScrollUp:
+      return UIBarMinimizationBehaviorOnScrollUp;
+  }
+}
+
+UIBarMinimizationRestorationBehavior UIBarMinimizationRestorationBehaviorFromReactRNSHeaderConfigIOSRestorationBehavior(
+    react::RNSHeaderConfigIOSRestorationBehavior restorationBehavior)
+{
+  switch (restorationBehavior) {
+    case react::RNSHeaderConfigIOSRestorationBehavior::Automatic:
+      return UIBarMinimizationRestorationBehaviorAutomatic;
+    case react::RNSHeaderConfigIOSRestorationBehavior::AtScrollEdge:
+      return UIBarMinimizationRestorationBehaviorAtScrollEdge;
+  }
+}
+
+#endif // Check for iOS >= 27
+
+RNSStackScreenActivityMode RNSStackScreenActivityModeFromReactRNSStackScreenActivityMode(
+    react::RNSStackScreenActivityMode mode)
+{
+  return convert<RNSStackScreenActivityMode>(mode);
+}
 RNSHeaderItemVisibilityPriority RNSHeaderItemVisibilityPriorityFromReactRNSHeaderItemIOSVisibilityPriority(
     react::RNSHeaderItemIOSVisibilityPriority visibilityPriority)
 {

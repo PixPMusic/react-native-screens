@@ -24,6 +24,7 @@
                           headerItem:(nullable id<RNSHeaderItemDataProviding>)headerItem
                             rootMenu:(nullable RNSHeaderMenuData *)rootMenu
                        trackerItemId:(nullable NSString *)trackerItemId
+                inMenuRepresentation:(BOOL)inMenuRepresentation
 {
   if (self = [super init]) {
     _searchResult = searchResult;
@@ -31,6 +32,7 @@
     _headerItem = headerItem;
     _rootMenu = rootMenu;
     _trackerItemId = [trackerItemId copy];
+    _inMenuRepresentation = inMenuRepresentation;
   }
   return self;
 }
@@ -46,16 +48,30 @@
                                                 titleMenu:(nullable RNSHeaderMenuData *)titleMenu
 {
   for (id<RNSHeaderItemDataProviding> item in items) {
-    if (item.menu == nil || item.itemId == nil) {
+    if (item.itemId == nil) {
       continue;
     }
-    RNSHeaderMenuElementSearchResult *result = [self findElementWithId:elementId inMenu:item.menu];
-    if (result != nil) {
-      return [[RNSMenuElementLocator alloc] initWithSearchResult:result
-                                                        position:RNSMenuElementPositionItem
-                                                      headerItem:item
-                                                        rootMenu:item.menu
-                                                   trackerItemId:item.itemId];
+    if (item.menu != nil) {
+      RNSHeaderMenuElementSearchResult *result = [self findElementWithId:elementId inMenu:item.menu];
+      if (result != nil) {
+        return [[RNSMenuElementLocator alloc] initWithSearchResult:result
+                                                          position:RNSMenuElementPositionItem
+                                                        headerItem:item
+                                                          rootMenu:item.menu
+                                                     trackerItemId:item.itemId
+                                              inMenuRepresentation:NO];
+      }
+    }
+    if (item.menuRepresentation != nil) {
+      RNSHeaderMenuElementSearchResult *result = [self findElementWithId:elementId inMenu:item.menuRepresentation];
+      if (result != nil) {
+        return [[RNSMenuElementLocator alloc] initWithSearchResult:result
+                                                          position:RNSMenuElementPositionItem
+                                                        headerItem:item
+                                                          rootMenu:item.menuRepresentation
+                                                     trackerItemId:item.itemId
+                                              inMenuRepresentation:YES];
+      }
     }
   }
 
@@ -66,7 +82,8 @@
                                                         position:RNSMenuElementPositionTitle
                                                       headerItem:nil
                                                         rootMenu:titleMenu
-                                                   trackerItemId:RNSTitleMenuTrackerItemId];
+                                                   trackerItemId:RNSTitleMenuTrackerItemId
+                                            inMenuRepresentation:NO];
     }
   }
 

@@ -4,12 +4,12 @@
 
 #import <UIKit/UIKit.h>
 #import <react/renderer/components/rnscreens/Props.h>
+#include <type_traits>
 #import "RNSDefines.h"
 #import "RNSHeaderItemPlacement.h"
 #import "RNSHeaderItemSpacerPlacement.h"
-#import "RNSStackScreenProviding.h"
 #import "RNSHeaderItemVisibilityPriority.h"
-#include <type_traits>
+#import "RNSStackScreenProviding.h"
 
 namespace react = facebook::react;
 
@@ -20,7 +20,6 @@ UINavigationItemStyleFromReactRNSHeaderConfigIOSNavigationItemStyle(
     react::RNSHeaderConfigIOSNavigationItemStyle style)
     API_AVAILABLE(ios(16.0));
 #endif
-
 
 template <typename>
 inline constexpr bool missingConversion = false;
@@ -46,7 +45,25 @@ template <>
 UINavigationItemBackButtonDisplayMode convert(
     react::RNSHeaderConfigIOSBackButtonDisplayMode displayMode);
 
-RNSStackScreenActivityMode RNSStackScreenActivityModeFromReactRNSStackScreenActivityMode(react::RNSStackScreenActivityMode mode);
+RNSStackScreenActivityMode
+RNSStackScreenActivityModeFromReactRNSStackScreenActivityMode(
+    react::RNSStackScreenActivityMode mode);
+UIBarButtonItemStyle UIBarButtonItemStyleFromReactRNSHeaderItemIOSVariant(
+    react::RNSHeaderItemIOSVariant variant);
+
+#if RNS_IPHONE_OS_VERSION_AVAILABLE(27_0)
+
+API_AVAILABLE(ios(27.0))
+UIBarMinimizationBehavior
+UIBarMinimizationBehaviorFromReactRNSHeaderConfigIOSMinimizationBehavior(
+    react::RNSHeaderConfigIOSMinimizationBehavior minimizationBehavior);
+
+API_AVAILABLE(ios(27.0))
+UIBarMinimizationRestorationBehavior
+UIBarMinimizationRestorationBehaviorFromReactRNSHeaderConfigIOSRestorationBehavior(
+    react::RNSHeaderConfigIOSRestorationBehavior restorationBehavior);
+
+#endif // Check for iOS >= 27
 
 RNSHeaderItemVisibilityPriority
 RNSHeaderItemVisibilityPriorityFromReactRNSHeaderItemIOSVisibilityPriority(

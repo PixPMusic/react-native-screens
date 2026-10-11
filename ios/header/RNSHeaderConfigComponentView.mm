@@ -1,4 +1,5 @@
 #import "RNSHeaderConfigComponentView.h"
+#import "RNSConversions-Stack.h"
 #import "RNSConversions.h"
 #import "RNSHeaderAppearanceMapper.h"
 #import "RNSHeaderConfigEventEmitter.h"
@@ -9,18 +10,8 @@
 #import "RNSHeaderMenuFinder.h"
 #import "RNSHeaderMenuMapper.h"
 #import "RNSHeaderMenuUpdateOptions.h"
-#import "RNSConversions-Stack.h"
 #import "RNSImageLoadingHelper.h"
 #import "RNSSearchBar.h"
-#import "RNSHeaderAppearanceMapper.h"
-#import "RNSHeaderConfigEventEmitter.h"
-#import "RNSHeaderConfigShadowStateProxy.h"
-#import "RNSHeaderItemComponentView.h"
-#import "RNSHeaderItemSpacerComponentView.h"
-#import "RNSHeaderMenuCoordinator.h"
-#import "RNSHeaderMenuFinder.h"
-#import "RNSHeaderMenuMapper.h"
-#import "RNSHeaderMenuUpdateOptions.h"
 #import "RNSStackNavigationController.h"
 #import "RNSStackScreenProviding.h"
 
@@ -47,9 +38,7 @@ static void RNSAssertIsValidHeaderChild(UIView *child)
       RNSSearchBar.class);
 }
 
-@interface RNSHeaderConfigComponentView () <
-    RCTRNSHeaderConfigIOSViewProtocol,
-    RNSSearchBarNavigationItemDelegate>
+@interface RNSHeaderConfigComponentView () <RCTRNSHeaderConfigIOSViewProtocol, RNSSearchBarNavigationItemDelegate>
 @end
 
 @implementation RNSHeaderConfigComponentView {
@@ -90,6 +79,12 @@ static void RNSAssertIsValidHeaderChild(UIView *child)
   _largeSubtitle = nil;
   _largeTitleEnabled = NO;
   _prompt = nil;
+#if RNS_IPHONE_OS_VERSION_AVAILABLE(27_0)
+  if (@available(iOS 27.0, *)) {
+    _minimizationBehavior = UIBarMinimizationBehaviorAutomatic;
+    _restorationBehavior = UIBarMinimizationRestorationBehaviorAutomatic;
+  }
+#endif // Check for iOS >= 27
   _backButtonTitle = nil;
   _backButtonDisplayMode = UINavigationItemBackButtonDisplayModeDefault;
   _backButtonMenuEnabled = YES;
@@ -348,12 +343,14 @@ static void RNSAssertIsValidHeaderChild(UIView *child)
 
   switch (locator.position) {
     case RNSMenuElementPositionItem:
-      RCTAssert([locator.headerItem isKindOfClass:RNSHeaderItemComponentView.class],
-                @"[RNScreens] headerItem is expected to be of type RNSHeaderItemComponentView");
+      RCTAssert(
+          [locator.headerItem isKindOfClass:RNSHeaderItemComponentView.class],
+          @"[RNScreens] headerItem is expected to be of type RNSHeaderItemComponentView");
       [static_cast<RNSHeaderItemComponentView *>(locator.headerItem)
           updateMenuElementWithId:menuItemId
                       withElement:newItemData
-                       parentMenu:locator.searchResult.parentMenu];
+                       parentMenu:locator.searchResult.parentMenu
+             inMenuRepresentation:locator.inMenuRepresentation];
       break;
     case RNSMenuElementPositionTitle:
       if (locator.searchResult.parentMenu != nil) {
@@ -392,12 +389,14 @@ static void RNSAssertIsValidHeaderChild(UIView *child)
 
   switch (locator.position) {
     case RNSMenuElementPositionItem:
-      RCTAssert([locator.headerItem isKindOfClass:RNSHeaderItemComponentView.class],
-                @"[RNScreens] headerItem is expected to be of type RNSHeaderItemComponentView");
+      RCTAssert(
+          [locator.headerItem isKindOfClass:RNSHeaderItemComponentView.class],
+          @"[RNScreens] headerItem is expected to be of type RNSHeaderItemComponentView");
       [static_cast<RNSHeaderItemComponentView *>(locator.headerItem)
           updateMenuElementWithId:menuElementId
                       withElement:newMenuItem
-                       parentMenu:locator.searchResult.parentMenu];
+                       parentMenu:locator.searchResult.parentMenu
+             inMenuRepresentation:locator.inMenuRepresentation];
       break;
     case RNSMenuElementPositionTitle:
       if (locator.searchResult.parentMenu == nil) {
@@ -483,9 +482,8 @@ static void RNSAssertIsValidHeaderChild(UIView *child)
 #if RNS_IPHONE_OS_VERSION_AVAILABLE(16_0) && !TARGET_OS_TV
   if (@available(iOS 16.0, *)) {
     if (oldHeaderProps.navigationItemStyle != newHeaderProps.navigationItemStyle) {
-      _navigationItemStyle =
-          rnscreens::conversion::UINavigationItemStyleFromReactRNSHeaderConfigIOSNavigationItemStyle(
-              newHeaderProps.navigationItemStyle);
+      _navigationItemStyle = rnscreens::conversion::UINavigationItemStyleFromReactRNSHeaderConfigIOSNavigationItemStyle(
+          newHeaderProps.navigationItemStyle);
     }
   }
 #endif
@@ -506,14 +504,39 @@ static void RNSAssertIsValidHeaderChild(UIView *child)
     _prompt = RCTNSStringFromStringNilIfEmpty(newHeaderProps.prompt);
   }
 
+  if (oldHeaderProps.minimizationBehavior != newHeaderProps.minimizationBehavior) {
+#if RNS_IPHONE_OS_VERSION_AVAILABLE(27_0)
+    if (@available(iOS 27.0, *)) {
+      _minimizationBehavior =
+          rnscreens::conversion::UIBarMinimizationBehaviorFromReactRNSHeaderConfigIOSMinimizationBehavior(
+              newHeaderProps.minimizationBehavior);
+    } else
+#endif // Check for iOS >= 27
+      if (newHeaderProps.minimizationBehavior != react::RNSHeaderConfigIOSMinimizationBehavior::Automatic) {
+        RCTLogWarn(@"[RNScreens] minimizationBehavior is supported for iOS >= 27");
+      }
+  }
+
+  if (oldHeaderProps.restorationBehavior != newHeaderProps.restorationBehavior) {
+#if RNS_IPHONE_OS_VERSION_AVAILABLE(27_0)
+    if (@available(iOS 27.0, *)) {
+      _restorationBehavior =
+          rnscreens::conversion::UIBarMinimizationRestorationBehaviorFromReactRNSHeaderConfigIOSRestorationBehavior(
+              newHeaderProps.restorationBehavior);
+    } else
+#endif // Check for iOS >= 27
+      if (newHeaderProps.restorationBehavior != react::RNSHeaderConfigIOSRestorationBehavior::Automatic) {
+        RCTLogWarn(@"[RNScreens] restorationBehavior is supported for iOS >= 27");
+      }
+  }
+
   if (oldHeaderProps.backButtonTitle != newHeaderProps.backButtonTitle) {
     _backButtonTitle = RCTNSStringFromStringNilIfEmpty(newHeaderProps.backButtonTitle);
   }
 
   if (oldHeaderProps.backButtonDisplayMode != newHeaderProps.backButtonDisplayMode) {
     _backButtonDisplayMode =
-        rnscreens::conversion::convert<UINavigationItemBackButtonDisplayMode>(
-            newHeaderProps.backButtonDisplayMode);
+        rnscreens::conversion::convert<UINavigationItemBackButtonDisplayMode>(newHeaderProps.backButtonDisplayMode);
   }
 
   if (oldHeaderProps.backButtonMenuEnabled != newHeaderProps.backButtonMenuEnabled) {
@@ -579,9 +602,10 @@ static void RNSAssertIsValidHeaderChild(UIView *child)
 
 - (id<RNSStackScreenProviding>)requireScreen
 {
-  RCTAssert([self.superview conformsToProtocol:@protocol(RNSStackScreenProviding)],
-            @"[RNScreens] Header Config should be a direct child of a stack screen, got %@",
-            self.superview);
+  RCTAssert(
+      [self.superview conformsToProtocol:@protocol(RNSStackScreenProviding)],
+      @"[RNScreens] Header Config should be a direct child of a stack screen, got %@",
+      self.superview);
   return (id<RNSStackScreenProviding>)self.superview;
 }
 
@@ -597,8 +621,9 @@ static void RNSAssertIsValidHeaderChild(UIView *child)
 {
   UINavigationController *navController = [[self requireScreen] controller].navigationController;
   RCTAssert(navController != nil, @"[RNScreens] NavigationController should be initialized at this point");
-  RCTAssert([navController isKindOfClass:RNSStackNavigationController.class],
-            @"[RNScreens] NavigationController should be instance of RNSStackNavigationController");
+  RCTAssert(
+      [navController isKindOfClass:RNSStackNavigationController.class],
+      @"[RNScreens] NavigationController should be instance of RNSStackNavigationController");
   return (RNSStackNavigationController *)navController;
 }
 

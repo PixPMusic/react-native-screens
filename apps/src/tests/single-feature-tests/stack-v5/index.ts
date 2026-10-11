@@ -17,6 +17,7 @@ import TestStackHeaderIconIOS from './test-stack-header-icon-ios';
 import TestStackBackButtonIOS from './test-stack-back-button-ios';
 import TestStackBackButtonHiddenIOS from './test-stack-back-button-hidden-ios';
 import TestStackNavigationItemStyleIOS from './test-stack-navigation-item-style-ios';
+import TestStackHeaderBarMinimizationIOS from './test-stack-header-bar-minimization-ios';
 import TestStackBackButtonAndroid from './test-stack-back-button-android';
 import TestStackOverflowIcon from './test-stack-overflow-icon-android';
 import TestStackToolbarMenuCommands from './test-stack-toolbar-menu-commands-android';
@@ -36,6 +37,7 @@ import TestStackHeaderMenuActionStateIOS from './test-stack-header-menu-action-s
 import TestStackHeaderItemIdentifierIOS from './test-stack-header-item-identifier-ios';
 import TestStackHeaderAxisBehaviorIOS from './test-stack-header-axis-behavior-ios';
 import TestStackHeaderItemVisibilityPriorityIOS from './test-stack-header-item-visibility-priority-ios';
+import TestStackHeaderItemAppearanceIOS from './test-stack-header-item-appearance-ios';
 import TestStackHeaderTitleAppearanceAndroid from './test-stack-header-title-appearance-android';
 import TestStackHeaderTitleAppearanceIOS from './test-stack-header-title-appearance-ios';
 import TestStackHeaderBarColorsIOS from './test-stack-header-bar-colors-ios';
@@ -63,6 +65,7 @@ export { default as TestStackHeaderIconIOS } from './test-stack-header-icon-ios'
 export { default as TestStackHeaderItemIdentifierIOS } from './test-stack-header-item-identifier-ios';
 export { default as TestStackHeaderAxisBehaviorIOS } from './test-stack-header-axis-behavior-ios';
 export { default as TestStackHeaderItemVisibilityPriorityIOS } from './test-stack-header-item-visibility-priority-ios';
+export { default as TestStackHeaderItemAppearanceIOS } from './test-stack-header-item-appearance-ios';
 export { default as TestStackHeaderMenuIOS } from './test-stack-header-menu-ios';
 export { default as TestStackHeaderMenuOptionsIOS } from './test-stack-header-menu-options-ios';
 export { default as TestStackHeaderMenuPresentationIOS } from './test-stack-header-menu-presentation-ios';
@@ -72,6 +75,7 @@ export { default as TestStackHeaderSubviewOnPressIOS } from './test-stack-header
 export { default as TestStackBackButtonIOS } from './test-stack-back-button-ios';
 export { default as TestStackBackButtonHiddenIOS } from './test-stack-back-button-hidden-ios';
 export { default as TestStackNavigationItemStyleIOS } from './test-stack-navigation-item-style-ios';
+export { default as TestStackHeaderBarMinimizationIOS } from './test-stack-header-bar-minimization-ios';
 export { default as TestStackBackButtonAndroid } from './test-stack-back-button-android';
 export { default as TestStackOverflowIcon } from './test-stack-overflow-icon-android';
 export { default as TestStackToolbarMenuCommands } from './test-stack-toolbar-menu-commands-android';
@@ -113,6 +117,7 @@ const scenarios = {
   TestStackHeaderItemIdentifierIOS,
   TestStackHeaderAxisBehaviorIOS,
   TestStackHeaderItemVisibilityPriorityIOS,
+  TestStackHeaderItemAppearanceIOS,
   TestStackHeaderSubviewOnPress,
   TestStackHeaderSelectiveUpdates,
   TestStackHeaderMenuOptionsIOS,
@@ -121,6 +126,7 @@ const scenarios = {
   TestStackBackButtonIOS,
   TestStackBackButtonHiddenIOS,
   TestStackNavigationItemStyleIOS,
+  TestStackHeaderBarMinimizationIOS,
   TestStackBackButtonAndroid,
   TestStackOverflowIcon,
   TestStackToolbarMenuCommands,

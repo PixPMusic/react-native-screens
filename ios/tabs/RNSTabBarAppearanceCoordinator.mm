@@ -10,6 +10,21 @@
 #import "RNSTabsHostComponentView.h"
 #import "RNSTabsScreenViewController.h"
 
+static UIImage *_Nullable RNSImageWithSymbolRenderingMode(
+    UIImage *_Nullable image,
+    RNSTabsIconSymbolRenderingMode renderingMode)
+{
+  switch (renderingMode) {
+    case RNSTabsIconSymbolRenderingModeMonochrome:
+      return [image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    case RNSTabsIconSymbolRenderingModeOriginal:
+      return [image imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+    case RNSTabsIconSymbolRenderingModeDefault:
+    default:
+      return image;
+  }
+}
+
 @implementation RNSTabBarAppearanceCoordinator
 
 - (void)updateAppearanceOfTabBar:(nullable UITabBar *)tabBar
@@ -59,16 +74,18 @@
 
 /// Sets the normal icon on both the item (renders the iPhone bar) and the UITab (renders the
 /// iPad floating bar / sidebar, which never reads the item).
-- (void)setNormalImage:(nullable UIImage *)image
-         forTabBarItem:(nonnull UITabBarItem *)tabBarItem
-          ofScreenView:(nullable RNSTabsScreenComponentView *)screenView
+- (void)setTabImage:(nullable UIImage *)image
+      forTabBarItem:(nonnull UITabBarItem *)tabBarItem
+         screenView:(nullable RNSTabsScreenComponentView *)screenView
 {
-  tabBarItem.image = image;
 #if RNS_UITAB_API_SDK_AVAILABLE
   if (RNS_UITAB_API_ENABLED) {
     screenView.controller.tab.image = image;
   }
 #endif // RNS_UITAB_API_SDK_AVAILABLE
+  // This needs to be called after tab.image assignment
+  // (see https://github.com/software-mansion/react-native-screens/pull/4813)
+  tabBarItem.image = image;
 }
 
 - (void)setIconsForTabBarItem:(UITabBarItem *)tabBarItem
@@ -77,19 +94,21 @@
 {
   if (screenView.iconType == RNSTabsIconTypeSfSymbol || screenView.iconType == RNSTabsIconTypeXcasset) {
     if (screenView.iconResourceName != nil) {
+      UIImage *image;
       if (screenView.iconType == RNSTabsIconTypeSfSymbol) {
-        UIImage *image = [UIImage systemImageNamed:screenView.iconResourceName];
+        image = [RNSImageLoadingHelper symbolImageNamed:screenView.iconResourceName];
         if (image == nil) {
           RCTLogWarn(@"[RNScreens] Failed to load SF Symbol \"%@\" for tab bar item", screenView.iconResourceName);
         }
-        [self setNormalImage:image forTabBarItem:tabBarItem ofScreenView:screenView];
       } else {
-        UIImage *image = [UIImage imageNamed:screenView.iconResourceName];
+        image = [UIImage imageNamed:screenView.iconResourceName];
         if (image == nil) {
           RCTLogWarn(@"[RNScreens] Failed to load xcasset \"%@\" for tab bar item", screenView.iconResourceName);
         }
-        [self setNormalImage:image forTabBarItem:tabBarItem ofScreenView:screenView];
       }
+      [self setTabImage:RNSImageWithSymbolRenderingMode(image, screenView.iconSymbolRenderingMode)
+          forTabBarItem:tabBarItem
+             screenView:screenView];
     } else if (screenView.systemItem != RNSTabsScreenSystemItemNone) {
       // Restore default system item icon
       std::optional<UITabBarSystemItem> systemItem =
@@ -102,27 +121,30 @@
       }
       UIImage *_Nullable systemItemImage =
           [[UITabBarItem alloc] initWithTabBarSystemItem:systemItem.value() tag:0].image;
-      [self setNormalImage:systemItemImage forTabBarItem:tabBarItem ofScreenView:screenView];
+      [self setTabImage:systemItemImage forTabBarItem:tabBarItem screenView:screenView];
     } else {
-      [self setNormalImage:nil forTabBarItem:tabBarItem ofScreenView:screenView];
+      [self setTabImage:nil forTabBarItem:tabBarItem screenView:screenView];
     }
 
     if (screenView.selectedIconResourceName != nil) {
+      UIImage *selectedImage;
       if (screenView.iconType == RNSTabsIconTypeSfSymbol) {
-        UIImage *selectedImage = [UIImage systemImageNamed:screenView.selectedIconResourceName];
+        selectedImage = [RNSImageLoadingHelper symbolImageNamed:screenView.selectedIconResourceName];
         if (selectedImage == nil) {
-          RCTLogWarn(@"[RNScreens] Failed to load SF Symbol \"%@\" for selected tab bar item",
-                     screenView.selectedIconResourceName);
+          RCTLogWarn(
+              @"[RNScreens] Failed to load SF Symbol \"%@\" for selected tab bar item",
+              screenView.selectedIconResourceName);
         }
-        tabBarItem.selectedImage = selectedImage;
       } else {
-        UIImage *selectedImage = [UIImage imageNamed:screenView.selectedIconResourceName];
+        selectedImage = [UIImage imageNamed:screenView.selectedIconResourceName];
         if (selectedImage == nil) {
-          RCTLogWarn(@"[RNScreens] Failed to load xcasset \"%@\" for selected tab bar item",
-                     screenView.selectedIconResourceName);
+          RCTLogWarn(
+              @"[RNScreens] Failed to load xcasset \"%@\" for selected tab bar item",
+              screenView.selectedIconResourceName);
         }
-        tabBarItem.selectedImage = selectedImage;
       }
+      tabBarItem.selectedImage =
+          RNSImageWithSymbolRenderingMode(selectedImage, screenView.selectedIconSymbolRenderingMode);
     } else if (screenView.systemItem != RNSTabsScreenSystemItemNone) {
       // Restore default system item icon
       std::optional<UITabBarSystemItem> systemItem =
@@ -138,7 +160,8 @@
       tabBarItem.selectedImage = nil;
     }
   } else if (imageLoader != nil) {
-    bool isTemplate = screenView.iconType == RNSTabsIconTypeTemplate;
+    bool isTemplate = screenView.iconImageRenderingMode == RNSTabsIconImageRenderingModeTemplate;
+    bool isSelectedTemplate = screenView.selectedIconImageRenderingMode == RNSTabsIconImageRenderingModeTemplate;
 
     // Weak-capture to avoid updating a tab bar item whose internal
     // view hierarchy has been torn down (iOS 26 UIKit regression:
@@ -158,14 +181,14 @@
                                             forScreenView:weakScreenView];
                                  }];
     } else {
-      [self setNormalImage:nil forTabBarItem:tabBarItem ofScreenView:screenView];
+      [self setTabImage:nil forTabBarItem:tabBarItem screenView:screenView];
     }
 
     // Selected icon
     if (screenView.selectedIconImageSource != nil) {
       [RNSImageLoadingHelper loadImageFromSource:screenView.selectedIconImageSource
                                  withImageLoader:imageLoader
-                                      asTemplate:isTemplate
+                                      asTemplate:isSelectedTemplate
                                  completionBlock:^(UIImage *image) {
                                    [self updateTabBarItem:weakTabBarItem
                                                 withImage:image
@@ -200,7 +223,7 @@
   if (isSelected) {
     tabBarItem.selectedImage = image;
   } else {
-    [self setNormalImage:image forTabBarItem:tabBarItem ofScreenView:screenView];
+    [self setTabImage:image forTabBarItem:tabBarItem screenView:screenView];
   }
 
   // A layout pass is required because the image might be loaded asynchronously,

@@ -49,8 +49,11 @@ namespace react = facebook::react;
   [self setTitleProp:nil];
   [self setIconProp:nil];
   [self setMenuProp:nil];
+  [self setMenuRepresentationProp:nil];
   _placement = RNSHeaderItemPlacementTrailing;
   _didSetHeaderItemPlacement = NO;
+  _style = UIBarButtonItemStylePlain;
+  _disabled = NO;
   _respondsToOnPress = NO;
   _hidesSharedBackground = NO;
   _visibilityPriority = RNSHeaderItemVisibilityPriorityStandard;
@@ -79,6 +82,12 @@ namespace react = facebook::react;
   return std::static_pointer_cast<const react::RNSHeaderItemIOSProps>(_props)->searchBarPlacement;
 }
 
+- (void)setMenuRepresentationProp:(RNSHeaderMenuData *)menuRepresentationProp
+{
+  _menuRepresentationProp = menuRepresentationProp;
+  _menuRepresentation = menuRepresentationProp;
+}
+
 - (void)emitOnPress
 {
   [_headerItemEventEmitter emitOnPress];
@@ -87,11 +96,22 @@ namespace react = facebook::react;
 - (void)updateMenuElementWithId:(NSString *)elementId
                     withElement:(id<RNSHeaderMenuElement>)newElement
                      parentMenu:(nullable RNSHeaderMenuData *)parentMenu
+           inMenuRepresentation:(BOOL)inMenuRepresentation
 {
-  if (parentMenu == nil) {
-    _menu = (RNSHeaderMenuData *)newElement;
+  if (inMenuRepresentation) {
+    if (parentMenu == nil) {
+      _menuRepresentation = (RNSHeaderMenuData *)newElement;
+    } else {
+      _menuRepresentation = [RNSHeaderMenuCoordinator menu:_menuRepresentation
+                                      replacingChildWithId:elementId
+                                               withElement:newElement];
+    }
   } else {
-    _menu = [RNSHeaderMenuCoordinator menu:_menu replacingChildWithId:elementId withElement:newElement];
+    if (parentMenu == nil) {
+      _menu = (RNSHeaderMenuData *)newElement;
+    } else {
+      _menu = [RNSHeaderMenuCoordinator menu:_menu replacingChildWithId:elementId withElement:newElement];
+    }
   }
   [_invalidationDelegate headerItemMenuDidUpdateFromCommandWithId:_itemId];
 }
@@ -263,6 +283,25 @@ RNS_IGNORE_SUPER_CALL_END
     [self setMenuProp:[RNSHeaderMenuMapper
                           menuFromDictionary:rnscreens::conversion::RNSConvertFollyDynamicToId(newItemProps.menu)]];
     menuDidChange = YES;
+  }
+
+  if (oldItemProps.menuRepresentation != newItemProps.menuRepresentation) {
+    [self setMenuRepresentationProp:[RNSHeaderMenuMapper
+                                        menuFromDictionary:rnscreens::conversion::RNSConvertFollyDynamicToId(
+                                                               newItemProps.menuRepresentation)]];
+    // menu representation is applied together with the menu & shares its toggle state tracker,
+    // so it follows the same invalidation path
+    menuDidChange = YES;
+  }
+
+  if (oldItemProps.variant != newItemProps.variant) {
+    _style = rnscreens::conversion::UIBarButtonItemStyleFromReactRNSHeaderItemIOSVariant(newItemProps.variant);
+    needsUpdate = YES;
+  }
+
+  if (oldItemProps.disabled != newItemProps.disabled) {
+    _disabled = newItemProps.disabled;
+    needsUpdate = YES;
   }
 
   if (oldItemProps.respondsToOnPress != newItemProps.respondsToOnPress) {

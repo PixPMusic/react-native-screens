@@ -15,7 +15,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, nullable) NSString *title;
 @property (nonatomic, readonly, nullable) RNSHeaderIconData *icon;
 @property (nonatomic, readonly, nullable) RNSHeaderMenuData *menu;
+@property (nonatomic, readonly, nullable) RNSHeaderMenuData *menuRepresentation;
 @property (nonatomic, readonly, nullable) UIView *customView;
+@property (nonatomic, readonly) UIBarButtonItemStyle style;
+@property (nonatomic, readonly) BOOL disabled;
 @property (nonatomic, readonly) BOOL respondsToOnPress;
 @property (nonatomic, readonly) BOOL hidesSharedBackground;
 @property (nonatomic, readonly) RNSHeaderItemAxisBehavior axisBehavior;
@@ -24,18 +27,21 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable) NSString *titleProp;
 @property (nonatomic, nullable) RNSHeaderIconData *iconProp;
 @property (nonatomic, nullable) RNSHeaderMenuData *menuProp;
+@property (nonatomic, nullable) RNSHeaderMenuData *menuRepresentationProp;
 
 @property (nonatomic, weak, nullable) id<RNSHeaderItemInvalidationDelegate> invalidationDelegate;
 
 - (void)emitOnPress;
 
 /**
- * Replaces a menu element in the item's menu tree with a new element constructed from command options.
+ * Replaces a menu element in the item's menu or menuRepresentation tree with a new element
+ * constructed from command options.
  * If parentMenu is nil, the element is the root menu and is replaced directly.
  */
 - (void)updateMenuElementWithId:(NSString *)elementId
                     withElement:(id<RNSHeaderMenuElement>)newElement
-                     parentMenu:(nullable RNSHeaderMenuData *)parentMenu;
+                     parentMenu:(nullable RNSHeaderMenuData *)parentMenu
+           inMenuRepresentation:(BOOL)inMenuRepresentation;
 
 @end
 

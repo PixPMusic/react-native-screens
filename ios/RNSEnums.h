@@ -32,16 +32,16 @@ typedef NS_ENUM(NSInteger, RNSBlurEffectStyle) {
   RNSBlurEffectStyleSystemMaterial API_UNAVAILABLE(watchos, tvos) = UIBlurEffectStyleSystemMaterial,
   RNSBlurEffectStyleSystemThickMaterial API_UNAVAILABLE(watchos, tvos) = UIBlurEffectStyleSystemThickMaterial,
   RNSBlurEffectStyleSystemChromeMaterial API_UNAVAILABLE(watchos, tvos) = UIBlurEffectStyleSystemChromeMaterial,
-  RNSBlurEffectStyleSystemUltraThinMaterialLight API_UNAVAILABLE(watchos,
-                                                                 tvos) = UIBlurEffectStyleSystemUltraThinMaterialLight,
+  RNSBlurEffectStyleSystemUltraThinMaterialLight API_UNAVAILABLE(watchos, tvos) =
+      UIBlurEffectStyleSystemUltraThinMaterialLight,
   RNSBlurEffectStyleSystemThinMaterialLight API_UNAVAILABLE(watchos, tvos) = UIBlurEffectStyleSystemThinMaterialLight,
   RNSBlurEffectStyleSystemMaterialLight API_UNAVAILABLE(watchos, tvos) = UIBlurEffectStyleSystemMaterialLight,
   RNSBlurEffectStyleSystemThickMaterialLight API_UNAVAILABLE(watchos, tvos) = UIBlurEffectStyleSystemThickMaterialLight,
-  RNSBlurEffectStyleSystemChromeMaterialLight API_UNAVAILABLE(watchos,
-                                                              tvos) = UIBlurEffectStyleSystemChromeMaterialLight,
+  RNSBlurEffectStyleSystemChromeMaterialLight API_UNAVAILABLE(watchos, tvos) =
+      UIBlurEffectStyleSystemChromeMaterialLight,
 
-  RNSBlurEffectStyleSystemUltraThinMaterialDark API_UNAVAILABLE(watchos,
-                                                                tvos) = UIBlurEffectStyleSystemUltraThinMaterialDark,
+  RNSBlurEffectStyleSystemUltraThinMaterialDark API_UNAVAILABLE(watchos, tvos) =
+      UIBlurEffectStyleSystemUltraThinMaterialDark,
   RNSBlurEffectStyleSystemThinMaterialDark API_UNAVAILABLE(watchos, tvos) = UIBlurEffectStyleSystemThinMaterialDark,
   RNSBlurEffectStyleSystemMaterialDark API_UNAVAILABLE(watchos, tvos) = UIBlurEffectStyleSystemMaterialDark,
   RNSBlurEffectStyleSystemThickMaterialDark API_UNAVAILABLE(watchos, tvos) = UIBlurEffectStyleSystemThickMaterialDark,
@@ -51,9 +51,20 @@ typedef NS_ENUM(NSInteger, RNSBlurEffectStyle) {
 
 typedef NS_ENUM(NSInteger, RNSTabsIconType) {
   RNSTabsIconTypeImage,
-  RNSTabsIconTypeTemplate,
   RNSTabsIconTypeSfSymbol,
   RNSTabsIconTypeXcasset,
+};
+
+typedef NS_ENUM(NSInteger, RNSTabsIconImageRenderingMode) {
+  RNSTabsIconImageRenderingModeDefault,
+  RNSTabsIconImageRenderingModeTemplate,
+  RNSTabsIconImageRenderingModeOriginal,
+};
+
+typedef NS_ENUM(NSInteger, RNSTabsIconSymbolRenderingMode) {
+  RNSTabsIconSymbolRenderingModeDefault,
+  RNSTabsIconSymbolRenderingModeMonochrome,
+  RNSTabsIconSymbolRenderingModeOriginal,
 };
 
 typedef NS_ENUM(NSInteger, RNSOrientation) {
@@ -83,6 +94,8 @@ typedef NS_ENUM(NSInteger, RNSTabsScreenSystemItem) {
   RNSTabsScreenSystemItemSearch,
   RNSTabsScreenSystemItemTopRated
 };
+
+typedef NS_ENUM(NSInteger, RNSTabsScreenTabRole) { RNSTabsScreenTabRoleNone, RNSTabsScreenTabRoleSearch };
 
 typedef NS_ENUM(NSInteger, RNSTabsBottomAccessoryEnvironment) {
   RNSTabsBottomAccessoryEnvironmentRegular,

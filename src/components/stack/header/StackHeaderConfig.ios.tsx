@@ -67,6 +67,8 @@ function StackHeaderConfig(
     navigationItemStyle,
     tintColor,
     prompt,
+    minimizationBehavior,
+    restorationBehavior,
     backButtonTitle,
     backButtonDisplayMode,
     backButtonMenuEnabled,
@@ -119,13 +121,13 @@ function StackHeaderConfig(
       [
         ...(leadingItems ?? [])
           .filter(it => it && it.type === 'item')
-          .map(it => it.menu),
+          .flatMap(it => [it.menu, it.menuRepresentation]),
         ...(trailingItems ?? [])
           .filter(it => it && it.type === 'item')
-          .map(it => it.menu),
+          .flatMap(it => [it.menu, it.menuRepresentation]),
         ...(toolbarItems ?? [])
           .filter(it => it && it.type === 'item')
-          .map(it => it.menu),
+          .flatMap(it => [it.menu, it.menuRepresentation]),
         titleMenu,
       ].filter(it => !!it),
     [leadingItems, trailingItems, toolbarItems, titleMenu],
@@ -180,6 +182,8 @@ function StackHeaderConfig(
       largeSubtitle={largeSubtitle}
       largeTitleEnabled={!!largeTitleEnabled}
       prompt={prompt}
+      minimizationBehavior={minimizationBehavior}
+      restorationBehavior={restorationBehavior}
       standardAppearance={mapAppearanceToNativeProp(standardAppearance)}
       scrollEdgeAppearance={mapAppearanceToNativeProp(scrollEdgeAppearance)}
       titleMenu={resolvedTitleMenu}

@@ -22,7 +22,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) CGFloat height;
 @property (nonatomic, readonly, nullable) RNSHeaderIconData *icon;
 @property (nonatomic, readonly, nullable) RNSHeaderMenuData *menu;
+@property (nonatomic, readonly, nullable) RNSHeaderMenuData *menuRepresentation;
 @property (nonatomic, readonly, nullable) UIView *customView;
+@property (nonatomic, readonly) UIBarButtonItemStyle style;
+@property (nonatomic, readonly) BOOL disabled;
 @property (nonatomic, readonly) BOOL respondsToOnPress;
 @property (nonatomic, readonly) BOOL hidesSharedBackground;
 @property (nonatomic, readonly) BOOL searchBarPlacement;

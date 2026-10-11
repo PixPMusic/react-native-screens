@@ -28,6 +28,7 @@ typedef NS_ENUM(NSInteger, RNSMenuElementPosition) {
 
 @property (nonatomic, strong, readonly) RNSHeaderMenuElementSearchResult *searchResult;
 @property (nonatomic, readonly) RNSMenuElementPosition position;
+@property (nonatomic, readonly) BOOL inMenuRepresentation;
 @property (nonatomic, weak, readonly, nullable) id<RNSHeaderItemDataProviding> headerItem;
 
 /**
@@ -44,7 +45,8 @@ typedef NS_ENUM(NSInteger, RNSMenuElementPosition) {
                             position:(RNSMenuElementPosition)position
                           headerItem:(nullable id<RNSHeaderItemDataProviding>)headerItem
                             rootMenu:(nullable RNSHeaderMenuData *)rootMenu
-                       trackerItemId:(nullable NSString *)trackerItemId;
+                       trackerItemId:(nullable NSString *)trackerItemId
+                inMenuRepresentation:(BOOL)inMenuRepresentation;
 
 @end
 

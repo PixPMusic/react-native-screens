@@ -439,8 +439,9 @@
     if ([barButtonItem.customView isKindOfClass:UIButton.class]) {
       UIButton *button = (UIButton *)barButtonItem.customView;
       button.menu = nil;
-      button.enabled = item.respondsToOnPress;
+      button.enabled = !item.disabled && item.respondsToOnPress;
     }
+    [self reapplyMenuRepresentationForItemWithId:itemId];
     return;
   }
 
@@ -454,6 +455,35 @@
               menuInvalidatedCallback:^{
                 [weakSelf reapplyMenuForItemWithId:itemId];
               }];
+  [self reapplyMenuRepresentationForItemWithId:itemId];
+}
+
+- (void)reapplyMenuRepresentationForItemWithId:(NSString *)itemId
+{
+  if (_configDataProvider == nil || itemId == nil) {
+    return;
+  }
+
+  UIBarButtonItem *barButtonItem = _barButtonItemsByItemId[itemId];
+  if (barButtonItem == nil) {
+    return;
+  }
+
+  id<RNSHeaderItemDataProviding> item = [self findItemWithId:itemId];
+  if (item == nil) {
+    return;
+  }
+
+  RNSHeaderMenuToggleStateTracker *tracker = [_trackerRegistry trackerForItemId:itemId];
+  __weak auto weakSelf = self;
+  [RNSHeaderMenuCoordinator applyMenuRepresentation:item.menuRepresentation
+                                    toBarButtonItem:barButtonItem
+                           withHeaderEventsDelegate:_eventsDelegate
+                                       stateTracker:tracker
+                                    withImageLoader:_imageLoader
+                            menuInvalidatedCallback:^{
+                              [weakSelf reapplyMenuRepresentationForItemWithId:itemId];
+                            }];
 }
 
 - (nullable id<RNSHeaderItemDataProviding>)findItemWithId:(NSString *)itemId
@@ -549,6 +579,15 @@
     navItem.largeSubtitle = _configDataProvider.largeSubtitle;
   }
 #endif // RNS_IPHONE_OS_VERSION_AVAILABLE(26_0)
+
+#if RNS_IPHONE_OS_VERSION_AVAILABLE(27_0)
+  if (@available(iOS 27.0, *)) {
+    UIBarMinimization *minimization = [UIBarMinimization new];
+    minimization.minimizationBehavior = _configDataProvider.minimizationBehavior;
+    minimization.restorationBehavior = _configDataProvider.restorationBehavior;
+    navItem.navigationBarMinimization = minimization;
+  }
+#endif // Check for iOS >= 27
 
 #if !TARGET_OS_TV
   navItem.largeTitleDisplayMode = _configDataProvider.largeTitleEnabled ? UINavigationItemLargeTitleDisplayModeAlways
@@ -803,6 +842,20 @@
                 menuInvalidatedCallback:^{
                   [weakSelf reapplyMenuForItemWithId:capturedItemId];
                 }];
+  }
+
+  if (item.menuRepresentation != nil && item.itemId != nil) {
+    RNSHeaderMenuToggleStateTracker *tracker = [_trackerRegistry trackerForItemId:item.itemId];
+    __weak auto weakSelf = self;
+    NSString *capturedItemId = item.itemId;
+    [RNSHeaderMenuCoordinator applyMenuRepresentation:item.menuRepresentation
+                                      toBarButtonItem:barButtonItem
+                             withHeaderEventsDelegate:_eventsDelegate
+                                         stateTracker:tracker
+                                      withImageLoader:_imageLoader
+                              menuInvalidatedCallback:^{
+                                [weakSelf reapplyMenuRepresentationForItemWithId:capturedItemId];
+                              }];
   }
 
   if (item.itemId != nil) {

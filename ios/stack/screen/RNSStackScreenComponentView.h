@@ -1,6 +1,7 @@
 #pragma once
 
 #import "RNSReactBaseView.h"
+#import "RNSSafeAreaProviding.h"
 #import "RNSStackScreenComponentEventEmitter.h"
 #import "RNSStackScreenProviding.h"
 
@@ -10,7 +11,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class RNSStackHostComponentView;
 @class RNSHeaderConfigComponentView;
 
-@interface RNSStackScreenComponentView : RNSReactBaseView <RNSStackScreenProviding>
+@interface RNSStackScreenComponentView : RNSReactBaseView <RNSStackScreenProviding, RNSSafeAreaProviding>
 
 @property (nonatomic, weak, readwrite, nullable) RNSStackHostComponentView *stackHost;
 @property (nonatomic, weak, readonly, nullable) RNSHeaderConfigComponentView *headerConfig;

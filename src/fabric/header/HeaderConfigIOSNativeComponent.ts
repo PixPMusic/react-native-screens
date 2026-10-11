@@ -17,6 +17,14 @@ import { UnsafeMixed } from '../codegenUtils';
 type BackButtonDisplayMode = 'default' | 'generic' | 'minimal';
 type NavigationItemStyle = 'navigator' | 'browser' | 'editor';
 
+type MinimizationBehavior =
+  | 'automatic'
+  | 'never'
+  | 'onScrollDown'
+  | 'onScrollUp';
+
+type RestorationBehavior = 'automatic' | 'atScrollEdge';
+
 export type HeaderAppearance = {
   backgroundColor?: ProcessedColorValue | null | undefined;
   shadowColor?: ProcessedColorValue | null | undefined;
@@ -66,6 +74,9 @@ export interface NativeProps extends ViewProps {
   largeTitleEnabled?: CT.WithDefault<boolean, false>;
 
   prompt?: string | undefined;
+
+  minimizationBehavior?: CT.WithDefault<MinimizationBehavior, 'automatic'>;
+  restorationBehavior?: CT.WithDefault<RestorationBehavior, 'automatic'>;
 
   titleMenu?: UnsafeMixed<StackHeaderMenuIOS> | undefined;
 
