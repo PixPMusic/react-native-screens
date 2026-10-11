@@ -16,6 +16,7 @@
 
 // https://developer.apple.com/documentation/uikit/uitabbarcontroller?language=objc#The-More-navigation-controller
 static constexpr NSUInteger kMinCountOfVCsForMoreVCPresence = 6;
+static void *RNSTabBarGeometryContext = &RNSTabBarGeometryContext;
 
 // We need UINavigationControllerDelegate to handle navigation within `moreNavigationController`
 @interface RNSTabBarController () <UITabBarControllerDelegate, UINavigationControllerDelegate>
@@ -103,6 +104,8 @@ rns_pushViewController(__unsafe_unretained id self, SEL _cmd, UIViewController *
   BOOL _pendingMoreTabSelectedEmit;
 
   BOOL _leadingTabBarLayoutApplied;
+  BOOL _applyingLeadingTabBarLayout;
+  CALayer *_observedTabBarLayer;
 
   RNSTabsNavigationStateObserverRegistry *_observerRegistry;
 
@@ -199,41 +202,52 @@ rns_pushViewController(__unsafe_unretained id self, SEL _cmd, UIViewController *
 
 #pragma mark - UIKit callbacks
 
-- (void)setTabBarHidden:(BOOL)hidden animated:(BOOL)animated
+- (void)viewDidLoad
 {
-  if (@available(iOS 26.0, *)) {
-    if (self.tabsHostComponentView.tabBarLeadingWidth > 0) {
-      // UIKit's visibility animation restores its full-width tab bar frame.
-      // Apply visibility and the leading frame together before either is drawn.
-      [UIView performWithoutAnimation:^{
-        [super setTabBarHidden:hidden animated:NO];
-        [self.view setNeedsLayout];
-        [self.view layoutIfNeeded];
-      }];
-      return;
-    }
-  }
-  [super setTabBarHidden:hidden animated:animated];
+  [super viewDidLoad];
+  _observedTabBarLayer = self.tabBar.layer;
+  [_observedTabBarLayer addObserver:self forKeyPath:@"bounds" options:0 context:RNSTabBarGeometryContext];
+  [_observedTabBarLayer addObserver:self forKeyPath:@"position" options:0 context:RNSTabBarGeometryContext];
 }
 
-- (void)viewDidAppear:(BOOL)animated
+- (void)dealloc
 {
-  [super viewDidAppear:animated];
-  [self.view setNeedsLayout];
-  [self.view layoutIfNeeded];
+  [_observedTabBarLayer removeObserver:self forKeyPath:@"bounds" context:RNSTabBarGeometryContext];
+  [_observedTabBarLayer removeObserver:self forKeyPath:@"position" context:RNSTabBarGeometryContext];
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary<NSKeyValueChangeKey, id> *)change
+                       context:(void *)context
+{
+  if (context == RNSTabBarGeometryContext) {
+    [self applyLeadingTabBarLayout];
+    return;
+  }
+  [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 }
 
 - (void)viewDidLayoutSubviews
 {
   [super viewDidLayoutSubviews];
+  [self applyLeadingTabBarLayout];
+}
+
+- (void)applyLeadingTabBarLayout
+{
+  if (_applyingLeadingTabBarLayout) {
+    return;
+  }
 #if !TARGET_OS_TV
   if (@available(iOS 26.0, *)) {
     CGFloat requestedWidth = self.tabsHostComponentView.tabBarLeadingWidth;
     BOOL useLeadingLayout =
         requestedWidth > 0 && self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact;
     if (useLeadingLayout || _leadingTabBarLayoutApplied) {
-      // Resize only the public tab bar view. UIKit still owns its items, glass,
-      // selection, accessibility, and the full-width content controller.
+      // UIKit also resets this geometry from its own container after our layout
+      // callback, e.g. on scroll-edge and navigation updates. Observe the public
+      // layer geometry so every update is constrained before it is displayed.
       CGRect frame = self.tabBar.frame;
       CGFloat availableWidth = CGRectGetWidth(self.view.bounds);
       CGFloat width = useLeadingLayout ? MIN(requestedWidth, availableWidth) : availableWidth;
@@ -241,7 +255,9 @@ rns_pushViewController(__unsafe_unretained id self, SEL _cmd, UIViewController *
       frame.origin.x = useLeadingLayout && rtl ? availableWidth - width : 0;
       frame.size.width = width;
       if (!CGRectEqualToRect(frame, self.tabBar.frame)) {
+        _applyingLeadingTabBarLayout = YES;
         self.tabBar.frame = frame;
+        _applyingLeadingTabBarLayout = NO;
         [self.tabBar setNeedsLayout];
       }
       _leadingTabBarLayoutApplied = useLeadingLayout;
