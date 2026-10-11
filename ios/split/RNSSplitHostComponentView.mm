@@ -459,6 +459,11 @@ RNS_IGNORE_SUPER_CALL_END
   [_reactEventEmitter emitOnCollapse];
 }
 
+- (void)splitHostControllerWillExpand:(RNSSplitHostController *)controller
+{
+  [_reactEventEmitter emitOnWillExpand];
+}
+
 - (void)splitHostControllerDidExpand:(RNSSplitHostController *)controller
 {
   [_reactEventEmitter emitOnExpand];

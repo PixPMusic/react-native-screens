@@ -17,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol RNSSplitHostControllerEventsDelegate <NSObject>
 
 - (void)splitHostControllerDidCollapse:(RNSSplitHostController *)controller;
+- (void)splitHostControllerWillExpand:(RNSSplitHostController *)controller;
 - (void)splitHostControllerDidExpand:(RNSSplitHostController *)controller;
 - (void)splitHostController:(RNSSplitHostController *)controller
     willChangeDisplayModeFrom:(UISplitViewControllerDisplayMode)fromDisplayMode

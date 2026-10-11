@@ -32,6 +32,17 @@
   }
 }
 
+- (BOOL)emitOnWillExpand
+{
+  if (_reactEventEmitter != nullptr) {
+    _reactEventEmitter->onWillExpand({});
+    return YES;
+  } else {
+    RCTLogWarn(@"[RNScreens] Skipped OnWillExpand event emission due to nullish emitter");
+    return NO;
+  }
+}
+
 - (BOOL)emitOnExpand
 {
   if (_reactEventEmitter != nullptr) {

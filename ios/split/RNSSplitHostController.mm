@@ -402,6 +402,13 @@
   [self.eventsDelegate splitHostControllerDidCollapse:self];
 }
 
+- (UISplitViewControllerDisplayMode)splitViewController:(UISplitViewController *)svc
+           displayModeForExpandingToProposedDisplayMode:(UISplitViewControllerDisplayMode)proposedDisplayMode
+{
+  [self.eventsDelegate splitHostControllerWillExpand:self];
+  return proposedDisplayMode;
+}
+
 - (void)splitViewControllerDidExpand:(UISplitViewController *)svc
 {
   [self.eventsDelegate splitHostControllerDidExpand:self];

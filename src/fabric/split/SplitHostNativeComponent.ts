@@ -107,6 +107,7 @@ interface NativeProps extends ViewProps {
   onDisplayModeWillChange?:
     | CT.DirectEventHandler<DisplayModeWillChangeEvent>
     | undefined;
+  onWillExpand?: CT.DirectEventHandler<GenericEmptyEvent> | undefined;
   onExpand?: CT.DirectEventHandler<GenericEmptyEvent> | undefined;
   onInspectorHide?: CT.DirectEventHandler<GenericEmptyEvent> | undefined;
 }

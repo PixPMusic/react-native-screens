@@ -30,6 +30,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)emitOnDisplayModeWillChangeFrom:(UISplitViewControllerDisplayMode)currentDisplayMode
                                      to:(UISplitViewControllerDisplayMode)nextDisplayMode;
+
+/**
+ * @brief Emits onWillExpand before the SplitView expands to multiple columns.
+ */
+- (BOOL)emitOnWillExpand;
+
 /**
  * @brief Emits the onExpand event to notify associated component instance that the SplitView has expanded.
  *

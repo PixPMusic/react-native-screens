@@ -171,6 +171,12 @@ export interface SplitHostProps extends ViewProps {
     | ((e: NativeSyntheticEvent<DisplayModeWillChangeEvent>) => void)
     | undefined;
   /**
+   * @summary A callback that gets invoked before the Split expands to multiple columns.
+   */
+  onWillExpand?:
+    | ((e: NativeSyntheticEvent<GenericEmptyEvent>) => void)
+    | undefined;
+  /**
    * @summary A callback that gets invoked when the Split was expanded to multiple columns.
    */
   onExpand?: ((e: NativeSyntheticEvent<GenericEmptyEvent>) => void) | undefined;
