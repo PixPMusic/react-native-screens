@@ -71,7 +71,12 @@
       [item.tintColor getRed:&red green:&green blue:&blue alpha:&alpha];
       configuration.baseForegroundColor = red + green + blue > 1.5 ? UIColor.blackColor : UIColor.whiteColor;
     }
-    UIButton *button = [UIButton buttonWithConfiguration:configuration primaryAction:barButtonItem.primaryAction];
+    UIAction *action = barButtonItem.primaryAction;
+    if (item.icon != nil) {
+      action.title = @"";
+    }
+    UIButton *button = [UIButton buttonWithConfiguration:configuration primaryAction:action];
+    button.configuration = configuration;
     button.accessibilityLabel = item.title;
     button.tintColor = item.tintColor;
     button.enabled = item.respondsToOnPress || item.menu != nil;
