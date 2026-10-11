@@ -75,6 +75,13 @@ namespace react = facebook::react;
   }
 }
 
+- (void)emitOnTabBarTrailingActionPress
+{
+  if (_reactEventEmitter != nullptr) {
+    _reactEventEmitter->onTabBarTrailingActionPress({});
+  }
+}
+
 - (BOOL)emitOnMoreTabSelected:(OnMoreTabSelectedPayload)payload
 {
   if (_reactEventEmitter != nullptr) {

@@ -281,6 +281,15 @@ namespace react = facebook::react;
     _controller.view.backgroundColor = _nativeContainerBackgroundColor;
   }
 
+  if (newComponentProps.tabBarTrailingActionSystemImage != oldComponentProps.tabBarTrailingActionSystemImage ||
+      newComponentProps.tabBarTrailingActionAccessibilityLabel !=
+          oldComponentProps.tabBarTrailingActionAccessibilityLabel) {
+    _tabBarTrailingActionSystemImage = RCTNSStringFromString(newComponentProps.tabBarTrailingActionSystemImage);
+    _tabBarTrailingActionAccessibilityLabel =
+        RCTNSStringFromString(newComponentProps.tabBarTrailingActionAccessibilityLabel);
+    [_controller.view setNeedsLayout];
+  }
+
   if (newComponentProps.tabBarLeadingWidth != oldComponentProps.tabBarLeadingWidth) {
     _tabBarLeadingWidth = MAX(0, newComponentProps.tabBarLeadingWidth);
     [_controller.view setNeedsLayout];

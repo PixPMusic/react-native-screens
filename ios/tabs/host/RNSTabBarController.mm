@@ -106,6 +106,8 @@ rns_pushViewController(__unsafe_unretained id self, SEL _cmd, UIViewController *
   BOOL _leadingTabBarLayoutApplied;
   BOOL _applyingLeadingTabBarLayout;
   CALayer *_observedTabBarLayer;
+  UIButton *_trailingActionButton;
+  NSString *_trailingActionImageName;
 
   RNSTabsNavigationStateObserverRegistry *_observerRegistry;
 
@@ -208,12 +210,16 @@ rns_pushViewController(__unsafe_unretained id self, SEL _cmd, UIViewController *
   _observedTabBarLayer = self.tabBar.layer;
   [_observedTabBarLayer addObserver:self forKeyPath:@"bounds" options:0 context:RNSTabBarGeometryContext];
   [_observedTabBarLayer addObserver:self forKeyPath:@"position" options:0 context:RNSTabBarGeometryContext];
+  [_observedTabBarLayer addObserver:self forKeyPath:@"hidden" options:0 context:RNSTabBarGeometryContext];
+  [_observedTabBarLayer addObserver:self forKeyPath:@"opacity" options:0 context:RNSTabBarGeometryContext];
 }
 
 - (void)dealloc
 {
   [_observedTabBarLayer removeObserver:self forKeyPath:@"bounds" context:RNSTabBarGeometryContext];
   [_observedTabBarLayer removeObserver:self forKeyPath:@"position" context:RNSTabBarGeometryContext];
+  [_observedTabBarLayer removeObserver:self forKeyPath:@"hidden" context:RNSTabBarGeometryContext];
+  [_observedTabBarLayer removeObserver:self forKeyPath:@"opacity" context:RNSTabBarGeometryContext];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath
@@ -261,9 +267,53 @@ rns_pushViewController(__unsafe_unretained id self, SEL _cmd, UIViewController *
         [self.tabBar setNeedsLayout];
       }
       _leadingTabBarLayoutApplied = useLeadingLayout;
+      [self updateTrailingActionForLeadingLayout:useLeadingLayout];
     }
   }
 #endif
+}
+
+- (void)updateTrailingActionForLeadingLayout:(BOOL)leading API_AVAILABLE(ios(26.0))
+{
+  NSString *imageName = self.tabsHostComponentView.tabBarTrailingActionSystemImage;
+  UIView *container = self.tabBar.superview;
+  if (!leading || imageName.length == 0 || container == nil) {
+    [_trailingActionButton removeFromSuperview];
+    return;
+  }
+  if (_trailingActionButton == nil) {
+    _trailingActionButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [_trailingActionButton addTarget:self
+                              action:@selector(trailingActionPressed:)
+                    forControlEvents:UIControlEventTouchUpInside];
+  }
+  if (![_trailingActionImageName isEqualToString:imageName]) {
+    _trailingActionImageName = [imageName copy];
+    UIButtonConfiguration *configuration = [UIButtonConfiguration glassButtonConfiguration];
+    configuration.cornerStyle = UIButtonConfigurationCornerStyleCapsule;
+    configuration.image = [UIImage systemImageNamed:imageName];
+    configuration.preferredSymbolConfigurationForImage = [UIImageSymbolConfiguration configurationWithPointSize:23];
+    configuration.baseForegroundColor = UIColor.labelColor;
+    _trailingActionButton.configuration = configuration;
+  }
+  _trailingActionButton.accessibilityLabel = self.tabsHostComponentView.tabBarTrailingActionAccessibilityLabel;
+  if (_trailingActionButton.superview != container) {
+    [container addSubview:_trailingActionButton];
+  }
+  // Both controls inherit the same native container's transition. Mirroring the
+  // tab bar's own visibility also covers updates that do not hide the container.
+  CGRect barFrame = [self.tabBar convertRect:self.tabBar.bounds toView:container];
+  CGRect fullFrame = [self.view convertRect:self.view.bounds toView:container];
+  BOOL rtl = self.view.effectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionRightToLeft;
+  _trailingActionButton.frame = CGRectMake(
+      rtl ? CGRectGetMinX(fullFrame) + 16 : CGRectGetMaxX(fullFrame) - 76, CGRectGetMinY(barFrame) + 1, 60, 60);
+  _trailingActionButton.hidden = self.tabBar.hidden;
+  _trailingActionButton.alpha = self.tabBar.alpha;
+}
+
+- (void)trailingActionPressed:(UIButton *)sender
+{
+  [self.tabsHostComponentView.reactEventEmitter emitOnTabBarTrailingActionPress];
 }
 
 - (void)didMoveToParentViewController:(UIViewController *)parent

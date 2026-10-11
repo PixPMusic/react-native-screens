@@ -43,6 +43,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly, nullable) UIColor *tabBarTintColor;
 
 @property (nonatomic, readonly) CGFloat tabBarLeadingWidth;
+@property (nonatomic, copy, readonly) NSString *tabBarTrailingActionSystemImage;
+@property (nonatomic, copy, readonly) NSString *tabBarTrailingActionAccessibilityLabel;
 
 @property (nonatomic, readonly) BOOL tabBarHidden;
 
