@@ -199,6 +199,30 @@ rns_pushViewController(__unsafe_unretained id self, SEL _cmd, UIViewController *
 
 #pragma mark - UIKit callbacks
 
+- (void)setTabBarHidden:(BOOL)hidden animated:(BOOL)animated
+{
+  if (@available(iOS 26.0, *)) {
+    if (self.tabsHostComponentView.tabBarLeadingWidth > 0) {
+      // UIKit's visibility animation restores its full-width tab bar frame.
+      // Apply visibility and the leading frame together before either is drawn.
+      [UIView performWithoutAnimation:^{
+        [super setTabBarHidden:hidden animated:NO];
+        [self.view setNeedsLayout];
+        [self.view layoutIfNeeded];
+      }];
+      return;
+    }
+  }
+  [super setTabBarHidden:hidden animated:animated];
+}
+
+- (void)viewDidAppear:(BOOL)animated
+{
+  [super viewDidAppear:animated];
+  [self.view setNeedsLayout];
+  [self.view layoutIfNeeded];
+}
+
 - (void)viewDidLayoutSubviews
 {
   [super viewDidLayoutSubviews];
