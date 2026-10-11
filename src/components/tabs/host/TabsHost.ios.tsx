@@ -53,6 +53,7 @@ function TabsHost(props: TabsHostProps) {
       tabBarSidebarPreferredPlacement={ios?.tabBarSidebarPreferredPlacement}
       tabBarMinimizeBehavior={ios?.tabBarMinimizeBehavior}
       tabBarTintColor={ios?.tabBarTintColor}
+      tabBarLeadingWidth={ios?.tabBarLeadingWidth}
       bottomAccessoryHidden={ios?.bottomAccessoryHidden}
       onMoreTabSelected={ios?.onMoreTabSelected}>
       {children}

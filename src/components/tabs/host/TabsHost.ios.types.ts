@@ -39,6 +39,11 @@ export type TabBarSidebarPreferredPlacement =
   | 'tabBar';
 
 export interface TabsHostPropsIOS {
+  /** Width of a leading-aligned native tab bar on compact iOS 26+ layouts.
+   * Zero retains UIKit's full-width layout. Screen content remains full-width.
+   */
+  tabBarLeadingWidth?: number | undefined;
+
   /**
    * @summary Whether changes of `tabBarHidden` are animated.
    *
