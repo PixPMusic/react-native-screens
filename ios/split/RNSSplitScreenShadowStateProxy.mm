@@ -20,13 +20,15 @@ namespace react = facebook::react;
   return self;
 }
 
-- (void)updateShadowStateWithFrame:(CGRect)frame
+- (void)updateShadowStateWithFrame:(CGRect)frame force:(BOOL)force
 {
   if (_state == nullptr) {
     return;
   }
 
-  if (!CGRectEqualToRect(frame, _lastScheduledFrame)) {
+  // Insets can change without changing an underlaid column's frame.
+  // Include its pending safe-area state in the immediate resize commit.
+  if (force || !CGRectEqualToRect(frame, _lastScheduledFrame)) {
     auto newState = react::RNSSplitScreenState{RCTSizeFromCGSize(frame.size), RCTPointFromCGPoint(frame.origin)};
     _state->updateState(std::move(newState), facebook::react::EventQueue::UpdateMode::unstable_Immediate);
 

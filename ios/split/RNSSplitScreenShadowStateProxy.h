@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * @param frame A CGRect defining the component's layout metrics.
  */
-- (void)updateShadowStateWithFrame:(CGRect)frame;
+- (void)updateShadowStateWithFrame:(CGRect)frame force:(BOOL)force;
 
 @end
 

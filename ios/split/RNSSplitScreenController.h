@@ -66,6 +66,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark - Layout
 
+@property (nonatomic, readonly) BOOL isColumnLayoutAnimating;
+
+// Keep React content and its safe-area reservation aligned with the visible column.
+- (void)prepareColumnLayoutAnimationWithDuration:(NSTimeInterval)duration;
+- (void)columnSafeAreaInsetsDidChange;
+
 /**
  * @brief Reports the column frame change after the Split repositioned its columns.
  *

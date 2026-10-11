@@ -87,19 +87,7 @@
 #endif
 
   // Step 2.2 - applying updates to columns
-  if (provider.minimumPrimaryColumnWidth >= 0) {
-    splitHostController.minimumPrimaryColumnWidth = provider.minimumPrimaryColumnWidth;
-  }
-
-  if (provider.maximumPrimaryColumnWidth >= 0) {
-    splitHostController.maximumPrimaryColumnWidth = provider.maximumPrimaryColumnWidth;
-  }
-
-  if (provider.preferredPrimaryColumnWidthOrFraction >= 0 && provider.preferredPrimaryColumnWidthOrFraction < 1) {
-    splitHostController.preferredPrimaryColumnWidthFraction = provider.preferredPrimaryColumnWidthOrFraction;
-  } else if (provider.preferredPrimaryColumnWidthOrFraction >= 1) {
-    splitHostController.preferredPrimaryColumnWidth = provider.preferredPrimaryColumnWidthOrFraction;
-  }
+  [self updatePrimaryColumnMetricsFor:provider withController:splitHostController];
 
   if (provider.minimumSupplementaryColumnWidth >= 0) {
     splitHostController.minimumSupplementaryColumnWidth = provider.minimumSupplementaryColumnWidth;
@@ -149,6 +137,66 @@
   [splitHostController toggleSplitViewInspector:provider.showInspector];
 }
 
+// Keep hinge-driven column width changes in UIKit's transition instead of
+// snapping to the new preferred width when React receives the updated regions.
+- (void)updatePrimaryColumnMetricsFor:(id<RNSSplitHostAppearanceProvider>)provider
+                       withController:(RNSSplitHostController *)splitHostController
+{
+  const CGFloat minimum = provider.minimumPrimaryColumnWidth;
+  const CGFloat maximum = provider.maximumPrimaryColumnWidth;
+  const CGFloat preferred = provider.preferredPrimaryColumnWidthOrFraction;
+  const BOOL usesFraction = preferred >= 0 && preferred < 1;
+  const CGFloat currentPreferred = usesFraction ? splitHostController.preferredPrimaryColumnWidthFraction
+                                                : splitHostController.preferredPrimaryColumnWidth;
+  const BOOL metricsChanged = (minimum >= 0 && minimum != splitHostController.minimumPrimaryColumnWidth) ||
+      (maximum >= 0 && maximum != splitHostController.maximumPrimaryColumnWidth) ||
+      (preferred >= 0 && preferred != currentPreferred);
+  const BOOL hasConfiguredWidth =
+      splitHostController.preferredPrimaryColumnWidth != UISplitViewControllerAutomaticDimension ||
+      splitHostController.preferredPrimaryColumnWidthFraction != UISplitViewControllerAutomaticDimension;
+  UIView *view = splitHostController.viewIfLoaded;
+  const BOOL shouldAnimate = metricsChanged && hasConfiguredWidth && view.window != nil &&
+      !splitHostController.isCollapsed && !UIAccessibilityIsReduceMotionEnabled();
+  void (^applyMetrics)(void) = ^{
+    if (minimum >= 0)
+      splitHostController.minimumPrimaryColumnWidth = minimum;
+    if (maximum >= 0)
+      splitHostController.maximumPrimaryColumnWidth = maximum;
+    if (usesFraction) {
+      splitHostController.preferredPrimaryColumnWidthFraction = preferred;
+    } else if (preferred >= 1) {
+      splitHostController.preferredPrimaryColumnWidth = preferred;
+    }
+  };
+  if (!shouldAnimate) {
+    applyMetrics();
+    return;
+  }
+
+  [view layoutIfNeeded];
+  id<UIViewControllerTransitionCoordinator> coordinator = splitHostController.transitionCoordinator;
+  if (coordinator != nil &&
+      [coordinator
+          animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+            [splitHostController prepareColumnLayoutAnimationWithDuration:context.transitionDuration];
+            applyMetrics();
+            [view layoutIfNeeded];
+          }
+                          completion:nil]) {
+    return;
+  }
+  [UIView animateWithDuration:0.35
+                        delay:0
+                      options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
+                      UIViewAnimationOptionCurveEaseInOut
+                   animations:^{
+                     [splitHostController prepareColumnLayoutAnimationWithDuration:0.35];
+                     applyMetrics();
+                     [view layoutIfNeeded];
+                   }
+                   completion:nil];
+}
+
 /**
  * @brief Function that updates `preferredDisplayMode` property on SplitView.
  *
@@ -186,6 +234,7 @@
                       options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction |
                           UIViewAnimationOptionCurveEaseInOut
                    animations:^{
+                     [splitHostController prepareColumnLayoutAnimationWithDuration:0.35];
                      splitHostController.preferredDisplayMode = preferredDisplayMode;
                      [view layoutIfNeeded];
                    }

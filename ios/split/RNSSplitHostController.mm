@@ -127,6 +127,13 @@
   [[self columnControllerForColumn:column] screenDidChangeActivityMode:screen];
 }
 
+- (void)prepareColumnLayoutAnimationWithDuration:(NSTimeInterval)duration
+{
+  for (RNSSplitScreenController *controller in self.splitScreenControllers) {
+    [controller prepareColumnLayoutAnimationWithDuration:duration];
+  }
+}
+
 - (void)updateSplitAppearanceIfNeeded
 {
   [_splitAppearanceApplicator updateAppearanceIfNeeded:self.appearanceProvider

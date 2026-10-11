@@ -10,6 +10,14 @@
 @implementation RNSSplitScreenController {
   RNSSplitScreenComponentView *_splitScreenComponentView;
   RNSContainerItemSupport *_containerItemSupport;
+  CADisplayLink *_columnLayoutDisplayLink;
+  CFTimeInterval _columnLayoutAnimationEnd;
+  UIEdgeInsets _columnAnimationInitialSafeAreaInsets;
+  UIEdgeInsets _columnAnimationOriginalAdditionalInsets;
+
+  CGFloat _columnAnimationPrimaryStartEdge;
+  BOOL _columnAnimationTracksLeadingEdge;
+  BOOL _updatingColumnLayout;
 }
 
 - (instancetype)initWithSplitScreenComponentView:(RNSSplitScreenComponentView *)splitScreenComponentView
@@ -104,13 +112,126 @@
   [self reportColumnFrameInContextOfView:splitViewController.view];
 }
 
+- (BOOL)isColumnLayoutAnimating
+{
+  return _columnLayoutDisplayLink != nil;
+}
+
+- (void)prepareColumnLayoutAnimationWithDuration:(NSTimeInterval)duration
+{
+  if (self.view.window == nil || ![self isInSplitHostSubtree])
+    return;
+  RNSSplitHostController *host = [self findSplitHostController];
+  UIView *primaryView = [host viewControllerForColumn:UISplitViewControllerColumnPrimary].viewIfLoaded;
+  CGRect primaryFrame = [primaryView convertRect:primaryView.bounds toView:host.view];
+  if (_columnLayoutDisplayLink != nil && primaryView.layer.presentationLayer != nil &&
+      host.view.layer.presentationLayer != nil) {
+    primaryFrame = [primaryView.layer.presentationLayer convertRect:primaryView.layer.presentationLayer.bounds
+                                                            toLayer:host.view.layer.presentationLayer];
+  }
+  _columnLayoutAnimationEnd = CACurrentMediaTime() + duration;
+  _columnAnimationInitialSafeAreaInsets = self.view.safeAreaInsets;
+  if (_columnLayoutDisplayLink == nil)
+    _columnAnimationOriginalAdditionalInsets = self.additionalSafeAreaInsets;
+  _columnAnimationTracksLeadingEdge = CGRectGetMidX(primaryFrame) < CGRectGetMidX(host.view.bounds);
+  _columnAnimationPrimaryStartEdge =
+      _columnAnimationTracksLeadingEdge ? CGRectGetMaxX(primaryFrame) : CGRectGetMinX(primaryFrame);
+  if (_columnLayoutDisplayLink == nil) {
+    _columnLayoutDisplayLink = [CADisplayLink displayLinkWithTarget:self
+                                                           selector:@selector(updateAnimatedColumnLayout:)];
+    [_columnLayoutDisplayLink addToRunLoop:NSRunLoop.mainRunLoop forMode:NSRunLoopCommonModes];
+  }
+}
+
 - (void)reportColumnFrameInContextOfView:(UIView *)ancestorView
 {
-  // The column frame is the navigation controller's view frame, not the screen's: UIKit animates the screen view
-  // during push and pop transitions, the column stays put.
+  if (_updatingColumnLayout)
+    return;
+  _updatingColumnLayout = YES;
+  // The navigation controller is the column; its screen also moves during pushes and pops.
   UIView *columnView = self.navigationController.view ?: self.view;
   CGRect frame = [columnView convertRect:columnView.bounds toView:ancestorView];
+  if (_columnLayoutDisplayLink != nil) {
+    RNSSplitHostController *host = [self findSplitHostController];
+    UIView *primaryView = [host viewControllerForColumn:UISplitViewControllerColumnPrimary].viewIfLoaded;
+    CGRect primaryFrame = [primaryView convertRect:primaryView.bounds toView:ancestorView];
+    const CGFloat targetEdge =
+        _columnAnimationTracksLeadingEdge ? CGRectGetMaxX(primaryFrame) : CGRectGetMinX(primaryFrame);
+    const CGFloat edgeChange = targetEdge - _columnAnimationPrimaryStartEdge;
+    CALayer *primaryLayer = primaryView.layer.presentationLayer;
+    CALayer *hostLayer = ancestorView.layer.presentationLayer;
+    if (fabs(edgeChange) > 0.5 && primaryLayer != nil && hostLayer != nil) {
+      CGRect visiblePrimaryFrame = [primaryLayer convertRect:primaryLayer.bounds toLayer:hostLayer];
+      const CGFloat visibleEdge =
+          _columnAnimationTracksLeadingEdge ? CGRectGetMaxX(visiblePrimaryFrame) : CGRectGetMinX(visiblePrimaryFrame);
+      const CGFloat remaining = 1 - MIN(1, MAX(0, (visibleEdge - _columnAnimationPrimaryStartEdge) / edgeChange));
+      // The underlaid detail reserves the sidebar through its safe area, not its width.
+      // Remove our previous adjustment before deriving UIKit's destination inset.
+      UIEdgeInsets currentAdditional = self.additionalSafeAreaInsets;
+      UIEdgeInsets targetInsets = self.view.safeAreaInsets;
+      targetInsets.left -= currentAdditional.left - _columnAnimationOriginalAdditionalInsets.left;
+      targetInsets.right -= currentAdditional.right - _columnAnimationOriginalAdditionalInsets.right;
+      UIEdgeInsets additional = _columnAnimationOriginalAdditionalInsets;
+      additional.left += (_columnAnimationInitialSafeAreaInsets.left - targetInsets.left) * remaining;
+      additional.right += (_columnAnimationInitialSafeAreaInsets.right - targetInsets.right) * remaining;
+      if (!UIEdgeInsetsEqualToEdgeInsets(currentAdditional, additional)) {
+        // These insets already follow UIKit's presentation edge; do not animate them a second time.
+        [UIView performWithoutAnimation:^{
+          self.additionalSafeAreaInsets = additional;
+          [self.view layoutIfNeeded];
+        }];
+      }
+    }
+    // UIKit's model frame is already the destination. Yoga needs the visible column size.
+    CALayer *columnLayer = columnView.layer.presentationLayer;
+    if (columnLayer != nil && hostLayer != nil) {
+      frame = [columnLayer convertRect:columnLayer.bounds toLayer:hostLayer];
+    }
+  }
   [_delegate splitScreenController:self didChangeColumnFrame:frame];
+  _updatingColumnLayout = NO;
+}
+
+- (void)columnSafeAreaInsetsDidChange
+{
+  UIView *ancestorView = [self findSplitHostController].viewIfLoaded;
+  if (ancestorView != nil && self.navigationController != nil) {
+    [self reportColumnFrameInContextOfView:ancestorView];
+  }
+}
+
+- (void)updateAnimatedColumnLayout:(CADisplayLink *)displayLink
+{
+  if (self.view.window == nil || UIAccessibilityIsReduceMotionEnabled() ||
+      CACurrentMediaTime() >= _columnLayoutAnimationEnd) {
+    [self stopAnimatedColumnLayout];
+  }
+  UIView *ancestorView = [self findSplitHostController].viewIfLoaded;
+  if (ancestorView != nil && self.navigationController != nil) {
+    [self reportColumnFrameInContextOfView:ancestorView];
+  }
+}
+
+- (void)stopAnimatedColumnLayout
+{
+  if (_columnLayoutDisplayLink == nil)
+    return;
+  [_columnLayoutDisplayLink invalidate];
+  const BOOL wasUpdating = _updatingColumnLayout;
+  _updatingColumnLayout = YES;
+  [UIView performWithoutAnimation:^{
+    self.additionalSafeAreaInsets = _columnAnimationOriginalAdditionalInsets;
+    [self.view layoutIfNeeded];
+  }];
+  UIView *ancestorView = [self findSplitHostController].viewIfLoaded;
+  UIView *columnView = self.navigationController.view;
+  if (self.view.window != nil && ancestorView != nil && columnView != nil) {
+    // Flush the destination inset before ending immediate column updates.
+    CGRect frame = [columnView convertRect:columnView.bounds toView:ancestorView];
+    [_delegate splitScreenController:self didChangeColumnFrame:frame];
+  }
+  _columnLayoutDisplayLink = nil;
+  _updatingColumnLayout = wasUpdating;
 }
 
 #pragma mark - Events
@@ -143,6 +264,7 @@
 - (void)viewDidDisappear:(BOOL)animated
 {
   [super viewDidDisappear:animated];
+  [self stopAnimatedColumnLayout];
   [_delegate splitScreenControllerDidDisappear:self];
 }
 

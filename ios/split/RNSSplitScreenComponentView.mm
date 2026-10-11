@@ -129,7 +129,7 @@ namespace react = facebook::react;
 
 - (void)splitScreenController:(RNSSplitScreenController *)controller didChangeColumnFrame:(CGRect)frame
 {
-  [_shadowStateProxy updateShadowStateWithFrame:frame];
+  [_shadowStateProxy updateShadowStateWithFrame:frame force:controller.isColumnLayoutAnimating];
 }
 
 - (void)splitScreenControllerWillAppear:(RNSSplitScreenController *)controller
@@ -186,6 +186,7 @@ namespace react = facebook::react;
 - (void)safeAreaInsetsDidChange
 {
   [super safeAreaInsetsDidChange];
+  [_controller columnSafeAreaInsetsDidChange];
   [self dispatchSafeAreaDidChangeNotification];
 }
 

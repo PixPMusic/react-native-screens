@@ -78,6 +78,9 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)refreshSecondaryNavBar;
 
+// Capture column content before changing the split configuration in an animation.
+- (void)prepareColumnLayoutAnimationWithDuration:(NSTimeInterval)duration;
+
 #pragma mark - Public setters
 
 /**
