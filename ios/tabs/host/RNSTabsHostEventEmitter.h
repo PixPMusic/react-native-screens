@@ -63,7 +63,6 @@ typedef struct {
 
 /** Emits `onMoreTabSelected` event to JS. Returns YES if the event was dispatched successfully. */
 - (BOOL)emitOnMoreTabSelected:(OnMoreTabSelectedPayload)payload;
-- (void)emitOnTabBarTrailingActionPress;
 
 @end
 

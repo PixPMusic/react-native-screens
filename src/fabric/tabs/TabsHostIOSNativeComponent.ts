@@ -89,10 +89,6 @@ export interface NativeProps extends ViewProps {
   // iOS-specific props
   tabBarHiddenAnimationEnabled?: CT.WithDefault<boolean, true>;
   tabBarTintColor?: ColorValue | undefined;
-  tabBarLeadingWidth?: CT.WithDefault<CT.Double, 0>;
-  tabBarTrailingActionSystemImage?: string;
-  tabBarTrailingActionAccessibilityLabel?: string;
-  onTabBarTrailingActionPress?: CT.DirectEventHandler<Readonly<{}>>;
   tabBarMinimizeBehavior?: CT.WithDefault<TabBarMinimizeBehavior, 'automatic'>;
   tabBarControllerMode?: CT.WithDefault<TabBarControllerMode, 'automatic'>;
   tabBarSidebarPreferredPlacement?: CT.WithDefault<
