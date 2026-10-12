@@ -88,8 +88,6 @@ export interface NativeProps extends ViewProps {
     'standard'
   >;
   variant?: CT.WithDefault<'plain' | 'done' | 'prominent', 'plain'>;
-  width?: CT.WithDefault<CT.Float, 0>;
-  height?: CT.WithDefault<CT.Float, 0>;
   tintColor?: ColorValue | undefined;
   title?: string | undefined;
   icon?: UnsafeMixed<PlatformIconIOS> | undefined;

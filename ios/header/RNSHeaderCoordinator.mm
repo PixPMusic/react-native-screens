@@ -436,11 +436,6 @@
 
   if (item.menu == nil) {
     barButtonItem.menu = nil;
-    if ([barButtonItem.customView isKindOfClass:UIButton.class]) {
-      UIButton *button = (UIButton *)barButtonItem.customView;
-      button.menu = nil;
-      button.enabled = !item.disabled && item.respondsToOnPress;
-    }
     [self reapplyMenuRepresentationForItemWithId:itemId];
     return;
   }
@@ -797,8 +792,7 @@
     if (item.identifier != nil) {
       barButtonItem.identifier = item.identifier;
     }
-    barButtonItem.hidesSharedBackground = item.hidesSharedBackground ||
-        ((item.width > 0 || item.height > 0) && [barButtonItem.customView isKindOfClass:UIButton.class]);
+    barButtonItem.hidesSharedBackground = item.hidesSharedBackground;
   }
 #endif // RNS_IPHONE_OS_VERSION_AVAILABLE(26_0)
 
