@@ -1450,6 +1450,21 @@ Class<RCTComponentViewProtocol> RNSScreenCls(void)
 
 #pragma mark - Common
 
+#if RNS_IPHONE_OS_VERSION_AVAILABLE(27_1) && !TARGET_OS_TV && !TARGET_OS_VISION
+// Navigation sheets use horizontal bars, matching the standalone FormSheet.
+- (UIVerticalBarBehavior)preferredVerticalBarBehavior API_AVAILABLE(ios(27.1))
+{
+  switch (self.screenView.stackPresentation) {
+    case RNSScreenStackPresentationModal:
+    case RNSScreenStackPresentationPageSheet:
+    case RNSScreenStackPresentationFormSheet:
+      return UIVerticalBarBehaviorDisabled;
+    default:
+      return [super preferredVerticalBarBehavior];
+  }
+}
+#endif
+
 - (instancetype)initWithView:(UIView *)view
 {
   if (self = [super init]) {
