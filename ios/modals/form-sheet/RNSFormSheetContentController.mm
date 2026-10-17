@@ -45,10 +45,12 @@
 }
 
 #if RNS_IPHONE_OS_VERSION_AVAILABLE(27_1) && !TARGET_OS_TV && !TARGET_OS_VISION
-// Short sheets should not reserve an empty control rail on iPhone Duo.
 - (UIVerticalBarBehavior)preferredVerticalBarBehavior API_AVAILABLE(ios(27.1))
 {
-  return UIVerticalBarBehaviorDisabled;
+  if (self.appearanceProvider.prefersHorizontalBars) {
+    return UIVerticalBarBehaviorDisabled;
+  }
+  return [super preferredVerticalBarBehavior];
 }
 #endif
 

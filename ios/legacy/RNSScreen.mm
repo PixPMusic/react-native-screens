@@ -100,6 +100,7 @@ struct ContentWrapperBox {
   _shouldUpdateScrollEdgeEffects = NO;
 #if !TARGET_OS_TV
   _sheetExpandsWhenScrolledToEdge = YES;
+  _sheetPrefersHorizontalBars = NO;
 #endif // !TARGET_OS_TV
   _sheetsScrollView = nil;
   _sheetsScrollViewTag = 0;
@@ -1313,6 +1314,14 @@ RNS_IGNORE_SUPER_CALL_END
   }
 
   [self setSheetGrabberVisible:newScreenProps.sheetGrabberVisible];
+  if (_sheetPrefersHorizontalBars != newScreenProps.sheetPrefersHorizontalBars) {
+    _sheetPrefersHorizontalBars = newScreenProps.sheetPrefersHorizontalBars;
+#if RNS_IPHONE_OS_VERSION_AVAILABLE(27_1) && !TARGET_OS_VISION
+    if (@available(iOS 27.1, *)) {
+      [_controller setNeedsUpdateOfVerticalBarConfiguration];
+    }
+#endif
+  }
   [self setSheetCornerRadius:newScreenProps.sheetCornerRadius];
   [self setSheetExpandsWhenScrolledToEdge:newScreenProps.sheetExpandsWhenScrolledToEdge];
 
@@ -1451,9 +1460,11 @@ Class<RCTComponentViewProtocol> RNSScreenCls(void)
 #pragma mark - Common
 
 #if RNS_IPHONE_OS_VERSION_AVAILABLE(27_1) && !TARGET_OS_TV && !TARGET_OS_VISION
-// Navigation sheets use horizontal bars, matching the standalone FormSheet.
 - (UIVerticalBarBehavior)preferredVerticalBarBehavior API_AVAILABLE(ios(27.1))
 {
+  if (!self.screenView.sheetPrefersHorizontalBars) {
+    return [super preferredVerticalBarBehavior];
+  }
   switch (self.screenView.stackPresentation) {
     case RNSScreenStackPresentationModal:
     case RNSScreenStackPresentationPageSheet:
