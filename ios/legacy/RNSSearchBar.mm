@@ -1,5 +1,7 @@
 #import <UIKit/UIKit.h>
+#import <dlfcn.h>
 #import <objc/runtime.h>
+#import <atomic>
 
 #import "RNSDefines.h"
 #import "RNSSearchBar.h"
@@ -21,19 +23,20 @@ namespace react = facebook::react;
 // search placement changes. Once a storage is freed, React Native can create one at the same address on
 // the JS thread to measure text, and that edit then waits for the main thread while it holds the text
 // measurement lock; a main thread that measures text at that moment deadlocks. An observer filtered by a
-// freed object can never fire for it, so it is removed as the object is freed.
-@interface RNSFreedObjectObserverRemover : NSObject
+// freed object can never fire for it, so that registration is removed as its storage is freed. Only
+// UIKit's own registration is touched: its block function is learned while the first search controller
+// is created, and every other observer keeps its lifetime.
+@interface RNSSearchFieldObserverRemover : NSObject
 @end
 
-@implementation RNSFreedObjectObserverRemover {
-  NSNotificationCenter *_center;
-  id _observer;
+@implementation RNSSearchFieldObserverRemover {
+  // Weak, so the storage this remover is attached to adds no reference to UIKit's observer.
+  __weak id _observer;
 }
 
-- (instancetype)initWithCenter:(NSNotificationCenter *)center observer:(id)observer
+- (instancetype)initWithObserver:(id)observer
 {
   if (self = [super init]) {
-    _center = center;
     _observer = observer;
   }
   return self;
@@ -41,14 +44,39 @@ namespace react = facebook::react;
 
 - (void)dealloc
 {
-  [_center removeObserver:_observer];
+  id observer = _observer;
+  if (observer != nil) {
+    [NSNotificationCenter.defaultCenter removeObserver:observer];
+  }
 }
 
 @end
 
 static id (*RNSAddObserverWithBlock)(id, SEL, NSNotificationName, id, NSOperationQueue *, void (^)(NSNotification *));
+static BOOL RNSLearningSearchFieldObserver = NO;
+static std::atomic<void *> RNSSearchFieldObserverInvoke{nullptr};
 
-static id RNSAddObserverRemovedWithTextStorage(
+static void *RNSBlockInvoke(id block)
+{
+  // The Clang block ABI places the invoke function after isa, flags and reserved.
+  struct RNSBlockLayout {
+    void *isa;
+    int flags;
+    int reserved;
+    void *invoke;
+  };
+  return ((__bridge struct RNSBlockLayout *)block)->invoke;
+}
+
+static BOOL RNSIsUIKitFunction(void *function)
+{
+  Dl_info functionImage;
+  Dl_info uikitImage;
+  return dladdr(function, &functionImage) != 0 && dladdr((__bridge void *)UISearchTextField.class, &uikitImage) != 0 &&
+      functionImage.dli_fbase == uikitImage.dli_fbase;
+}
+
+static id RNSAddObserverRemovedWithSearchField(
     NSNotificationCenter *center,
     SEL selector,
     NSNotificationName name,
@@ -57,8 +85,19 @@ static id RNSAddObserverRemovedWithTextStorage(
     void (^block)(NSNotification *))
 {
   id observer = RNSAddObserverWithBlock(center, selector, name, object, queue, block);
-  if (queue != nil && [object isKindOfClass:NSTextStorage.class]) {
-    auto *remover = [[RNSFreedObjectObserverRemover alloc] initWithCenter:center observer:observer];
+  if (center != NSNotificationCenter.defaultCenter || queue != NSOperationQueue.mainQueue || block == nil ||
+      ![name isEqualToString:NSTextStorageDidProcessEditingNotification] ||
+      ![object isKindOfClass:NSTextStorage.class]) {
+    return observer;
+  }
+  void *invoke = RNSBlockInvoke(block);
+  // Only the main thread creates search controllers, and only it reads the learning flag.
+  if (NSThread.isMainThread && RNSLearningSearchFieldObserver && RNSSearchFieldObserverInvoke.load() == nullptr &&
+      RNSIsUIKitFunction(invoke)) {
+    RNSSearchFieldObserverInvoke.store(invoke);
+  }
+  if (invoke == RNSSearchFieldObserverInvoke.load()) {
+    auto *remover = [[RNSSearchFieldObserverRemover alloc] initWithObserver:observer];
     objc_setAssociatedObject(object, (__bridge const void *)remover, remover, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
   }
   return observer;
@@ -87,7 +126,7 @@ static id RNSAddObserverRemovedWithTextStorage(
   Method method =
       class_getInstanceMethod(NSNotificationCenter.class, @selector(addObserverForName:object:queue:usingBlock:));
   RNSAddObserverWithBlock =
-      (decltype(RNSAddObserverWithBlock))method_setImplementation(method, (IMP)RNSAddObserverRemovedWithTextStorage);
+      (decltype(RNSAddObserverWithBlock))method_setImplementation(method, (IMP)RNSAddObserverRemovedWithSearchField);
 }
 #endif // !TARGET_OS_TV
 
@@ -104,7 +143,10 @@ static id RNSAddObserverRemovedWithTextStorage(
 - (void)initCommonProps
 {
 #if !TARGET_OS_TV
+  // The controller's search field registers UIKit's observer while it is created.
+  RNSLearningSearchFieldObserver = RNSSearchFieldObserverInvoke.load() == nullptr;
   _controller = [[UISearchController alloc] initWithSearchResultsController:nil];
+  RNSLearningSearchFieldObserver = NO;
 #else
   // on TVOS UISearchController must contain searchResultsController.
   _controller = [[UISearchController alloc] initWithSearchResultsController:[UIViewController new]];
