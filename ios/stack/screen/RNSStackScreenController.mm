@@ -68,6 +68,7 @@
 - (void)viewDidAppear:(BOOL)animated
 {
   [super viewDidAppear:animated];
+  [self.headerCoordinator restoreDetachedTitleView];
   [[self reactEventEmitter] emitOnDidAppear];
 }
 
