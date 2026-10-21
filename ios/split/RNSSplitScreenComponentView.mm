@@ -79,12 +79,16 @@ namespace react = facebook::react;
       return;
     }
 
+    // Like a presented screen, an inspector can move between windows without passing through
+    // nil, and the handler asserts on attaching twice or detaching from a view it is not on.
     if (self.window != nil) {
       if (_touchHandler == nil) {
         _touchHandler = [RCTSurfaceTouchHandler new];
       }
-      [_touchHandler attachToView:self];
-    } else {
+      if (_touchHandler.view == nil) {
+        [_touchHandler attachToView:self];
+      }
+    } else if (_touchHandler.view == self) {
       [_touchHandler detachFromView:self];
     }
   }
