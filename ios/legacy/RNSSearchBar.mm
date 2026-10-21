@@ -1,4 +1,5 @@
 #import <UIKit/UIKit.h>
+#import <objc/runtime.h>
 
 #import "RNSDefines.h"
 #import "RNSSearchBar.h"
@@ -14,6 +15,57 @@
 
 namespace react = facebook::react;
 
+#if !TARGET_OS_TV
+// UIKit's search text field observes its text storage's edits on the main queue, filtered by the
+// storage's address, and never removes that observer; the search bar also replaces its field when the
+// search placement changes. Once a storage is freed, React Native can create one at the same address on
+// the JS thread to measure text, and that edit then waits for the main thread while it holds the text
+// measurement lock; a main thread that measures text at that moment deadlocks. An observer filtered by a
+// freed object can never fire for it, so it is removed as the object is freed.
+@interface RNSFreedObjectObserverRemover : NSObject
+@end
+
+@implementation RNSFreedObjectObserverRemover {
+  NSNotificationCenter *_center;
+  id _observer;
+}
+
+- (instancetype)initWithCenter:(NSNotificationCenter *)center observer:(id)observer
+{
+  if (self = [super init]) {
+    _center = center;
+    _observer = observer;
+  }
+  return self;
+}
+
+- (void)dealloc
+{
+  [_center removeObserver:_observer];
+}
+
+@end
+
+static id (*RNSAddObserverWithBlock)(id, SEL, NSNotificationName, id, NSOperationQueue *, void (^)(NSNotification *));
+
+static id RNSAddObserverRemovedWithTextStorage(
+    NSNotificationCenter *center,
+    SEL selector,
+    NSNotificationName name,
+    id object,
+    NSOperationQueue *queue,
+    void (^block)(NSNotification *))
+{
+  id observer = RNSAddObserverWithBlock(center, selector, name, object, queue, block);
+  if (queue != nil && [object isKindOfClass:NSTextStorage.class]) {
+    auto *remover = [[RNSFreedObjectObserverRemover alloc] initWithCenter:center observer:observer];
+    objc_setAssociatedObject(object, (__bridge const void *)remover, remover, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  }
+  return observer;
+}
+
+#endif // !TARGET_OS_TV
+
 @implementation RNSSearchBar {
   UISearchController *_controller;
   UIColor *_textColor;
@@ -25,6 +77,19 @@ namespace react = facebook::react;
 }
 
 @synthesize controller = _controller;
+
+#if !TARGET_OS_TV
++ (void)initialize
+{
+  if (self != RNSSearchBar.class) {
+    return;
+  }
+  Method method =
+      class_getInstanceMethod(NSNotificationCenter.class, @selector(addObserverForName:object:queue:usingBlock:));
+  RNSAddObserverWithBlock =
+      (decltype(RNSAddObserverWithBlock))method_setImplementation(method, (IMP)RNSAddObserverRemovedWithTextStorage);
+}
+#endif // !TARGET_OS_TV
 
 - (instancetype)init
 {
