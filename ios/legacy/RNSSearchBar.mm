@@ -125,8 +125,9 @@ static id RNSAddObserverRemovedWithSearchField(
   }
   Method method =
       class_getInstanceMethod(NSNotificationCenter.class, @selector(addObserverForName:object:queue:usingBlock:));
-  RNSAddObserverWithBlock =
-      (decltype(RNSAddObserverWithBlock))method_setImplementation(method, (IMP)RNSAddObserverRemovedWithSearchField);
+  // Store the original first: other threads call the replacement as soon as it is installed.
+  RNSAddObserverWithBlock = (decltype(RNSAddObserverWithBlock))method_getImplementation(method);
+  method_setImplementation(method, (IMP)RNSAddObserverRemovedWithSearchField);
 }
 #endif // !TARGET_OS_TV
 
