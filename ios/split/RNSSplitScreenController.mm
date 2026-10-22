@@ -131,6 +131,9 @@
 - (void)viewDidAppear:(BOOL)animated
 {
   [super viewDidAppear:animated];
+  if (_splitScreenComponentView.headerConfig != nil) {
+    [_headerCoordinator restoreDetachedTitleView];
+  }
   [_delegate splitScreenControllerDidAppear:self];
 }
 

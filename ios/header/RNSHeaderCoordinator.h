@@ -47,6 +47,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)updateNavigationBarVisibilityAnimated:(BOOL)animated;
 
+/// Sets the custom title view again when the navigation bar shows the item without hosting it.
+- (void)restoreDetachedTitleView;
+
 #if !TARGET_OS_TV
 - (void)updateToolbarVisibilityAnimated:(BOOL)animated;
 
