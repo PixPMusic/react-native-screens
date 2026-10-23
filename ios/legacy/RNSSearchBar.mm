@@ -421,17 +421,18 @@ static id RNSAddObserverRemovedWithSearchField(
 
 - (void)focus
 {
-  if (_controller.isActive) {
-    if (!_focusOnPresentation) {
-      [_controller.searchBar becomeFirstResponder];
-    }
-    return;
-  }
-
-  // Integrated search replaces its field while presenting. Focusing the old
-  // field starts a keyboard that is dismissed when that replacement happens.
   _focusOnPresentation = YES;
-  _controller.active = YES;
+  // Fabric can issue this command in the transaction that attaches search to
+  // its navigation item. Finish that layout before asking UIKit to activate it.
+  __weak RNSSearchBar *weakSelf = self;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    RNSSearchBar *strongSelf = weakSelf;
+    if (strongSelf == nil || !strongSelf->_focusOnPresentation) {
+      return;
+    }
+    [strongSelf.window layoutIfNeeded];
+    [strongSelf->_controller.searchBar becomeFirstResponder];
+  });
 }
 
 - (void)didPresentSearchController:(UISearchController *)searchController
