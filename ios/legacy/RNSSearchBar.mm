@@ -108,6 +108,7 @@ static id RNSAddObserverRemovedWithSearchField(
 @implementation RNSSearchBar {
   UISearchController *_controller;
   UIColor *_textColor;
+  BOOL _focusOnPresentation;
 
   // We use those booleans to log a warning if user attempts to restore
   // default behavior after setting explicit value for the prop.
@@ -154,6 +155,7 @@ static id RNSAddObserverRemovedWithSearchField(
 #endif
 
   _controller.searchBar.delegate = self;
+  _controller.delegate = self;
 
   _isObscureBackgroundSet = NO;
   _isHideNavigationBarSet = NO;
@@ -401,6 +403,7 @@ static id RNSAddObserverRemovedWithSearchField(
 #if !TARGET_OS_TV
 - (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar
 {
+  _focusOnPresentation = NO;
   _controller.searchBar.text = @"";
   [self resignFirstResponder];
   [self hideCancelButton];
@@ -412,12 +415,31 @@ static id RNSAddObserverRemovedWithSearchField(
 
 - (void)blur
 {
+  _focusOnPresentation = NO;
   [_controller.searchBar resignFirstResponder];
 }
 
 - (void)focus
 {
-  [_controller.searchBar becomeFirstResponder];
+  if (_controller.isActive) {
+    if (!_focusOnPresentation) {
+      [_controller.searchBar becomeFirstResponder];
+    }
+    return;
+  }
+
+  // Integrated search replaces its field while presenting. Focusing the old
+  // field starts a keyboard that is dismissed when that replacement happens.
+  _focusOnPresentation = YES;
+  _controller.active = YES;
+}
+
+- (void)didPresentSearchController:(UISearchController *)searchController
+{
+  if (_focusOnPresentation) {
+    _focusOnPresentation = NO;
+    [searchController.searchBar becomeFirstResponder];
+  }
 }
 
 - (void)clearText
