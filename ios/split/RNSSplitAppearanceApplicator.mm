@@ -180,6 +180,20 @@
     return;
   }
 
+  // UIKit's column transition also moves floating search toolbars. A UIView
+  // animation of preferredDisplayMode alone leaves those controls ahead of the sidebar.
+  if (splitHostController.style == UISplitViewControllerStyleDoubleColumn &&
+      (preferredDisplayMode == UISplitViewControllerDisplayModeOneBesideSecondary ||
+       preferredDisplayMode == UISplitViewControllerDisplayModeSecondaryOnly)) {
+    if (preferredDisplayMode == UISplitViewControllerDisplayModeSecondaryOnly) {
+      [splitHostController hideColumn:UISplitViewControllerColumnPrimary];
+    } else {
+      [splitHostController showColumn:UISplitViewControllerColumnPrimary];
+    }
+    splitHostController.preferredDisplayMode = preferredDisplayMode;
+    return;
+  }
+
   [view layoutIfNeeded];
   [UIView animateWithDuration:0.35
                         delay:0
