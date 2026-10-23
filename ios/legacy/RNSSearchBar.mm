@@ -423,14 +423,13 @@ static id RNSAddObserverRemovedWithSearchField(
 {
   _focusOnPresentation = YES;
   // Fabric can issue this command in the transaction that attaches search to
-  // its navigation item. Finish that layout before asking UIKit to activate it.
+  // its navigation item. Let that transaction finish before activating search.
   __weak RNSSearchBar *weakSelf = self;
   dispatch_async(dispatch_get_main_queue(), ^{
     RNSSearchBar *strongSelf = weakSelf;
     if (strongSelf == nil || !strongSelf->_focusOnPresentation) {
       return;
     }
-    [strongSelf.window layoutIfNeeded];
     [strongSelf->_controller.searchBar becomeFirstResponder];
   });
 }
