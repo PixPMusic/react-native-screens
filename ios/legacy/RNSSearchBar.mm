@@ -108,7 +108,7 @@ static id RNSAddObserverRemovedWithSearchField(
 @implementation RNSSearchBar {
   UISearchController *_controller;
   UIColor *_textColor;
-  BOOL _focusOnPresentation;
+  BOOL _focusRequested;
 
   // We use those booleans to log a warning if user attempts to restore
   // default behavior after setting explicit value for the prop.
@@ -155,7 +155,6 @@ static id RNSAddObserverRemovedWithSearchField(
 #endif
 
   _controller.searchBar.delegate = self;
-  _controller.delegate = self;
 
   _isObscureBackgroundSet = NO;
   _isHideNavigationBarSet = NO;
@@ -403,7 +402,7 @@ static id RNSAddObserverRemovedWithSearchField(
 #if !TARGET_OS_TV
 - (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar
 {
-  _focusOnPresentation = NO;
+  _focusRequested = NO;
   _controller.searchBar.text = @"";
   [self resignFirstResponder];
   [self hideCancelButton];
@@ -415,31 +414,33 @@ static id RNSAddObserverRemovedWithSearchField(
 
 - (void)blur
 {
-  _focusOnPresentation = NO;
+  _focusRequested = NO;
   [_controller.searchBar resignFirstResponder];
 }
 
 - (void)focus
 {
-  _focusOnPresentation = YES;
-  // Fabric can issue this command in the transaction that attaches search to
-  // its navigation item. Let that transaction finish before activating search.
+  _focusRequested = YES;
+  // Fabric can attach search and request focus in the same mounting transaction.
   __weak RNSSearchBar *weakSelf = self;
   dispatch_async(dispatch_get_main_queue(), ^{
     RNSSearchBar *strongSelf = weakSelf;
-    if (strongSelf == nil || !strongSelf->_focusOnPresentation) {
+    if (strongSelf == nil || !strongSelf->_focusRequested) {
       return;
     }
+    strongSelf->_focusRequested = NO;
+#if !TARGET_OS_TV
+    // Integrated search replaces its field during layout. The configuration view
+    // is not mounted, so lay out its header's window before focusing that field.
+    id<RNSSearchBarNavigationItemDelegate> header = strongSelf.navigationItemDelegate;
+    if ([header isKindOfClass:UIView.class]) {
+      [((UIView *)header).window layoutIfNeeded];
+    }
+    [strongSelf->_controller.searchBar.searchTextField becomeFirstResponder];
+#else
     [strongSelf->_controller.searchBar becomeFirstResponder];
+#endif
   });
-}
-
-- (void)didPresentSearchController:(UISearchController *)searchController
-{
-  if (_focusOnPresentation) {
-    _focusOnPresentation = NO;
-    [searchController.searchBar becomeFirstResponder];
-  }
 }
 
 - (void)clearText

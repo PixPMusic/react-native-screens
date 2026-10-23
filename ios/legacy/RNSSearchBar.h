@@ -22,9 +22,9 @@
 
 @interface RNSSearchBar :
 #if defined(__cplusplus)
-    RCTViewComponentView <UISearchBarDelegate, UISearchControllerDelegate, RCTRNSSearchBarViewProtocol>
+    RCTViewComponentView <UISearchBarDelegate, RCTRNSSearchBarViewProtocol>
 #else
-    UIView <UISearchBarDelegate, UISearchControllerDelegate>
+    UIView <UISearchBarDelegate>
 #endif
 
 @property (nonatomic, weak, nullable) id<RNSSearchBarNavigationItemDelegate> navigationItemDelegate;
