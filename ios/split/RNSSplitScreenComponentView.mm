@@ -8,6 +8,7 @@
 #import "RNSHeaderConfigComponentView.h"
 #import "RNSHeaderCoordinator.h"
 #import "RNSSafeAreaViewNotifications.h"
+#import "RNSScrollViewSeeking.h"
 #import "RNSSplitHostComponentView.h"
 #import "RNSSplitScreenComponentEventEmitter.h"
 #import "RNSSplitScreenController.h"
@@ -15,7 +16,7 @@
 
 namespace react = facebook::react;
 
-@interface RNSSplitScreenComponentView () <RNSSplitScreenControllerDelegate>
+@interface RNSSplitScreenComponentView () <RNSScrollViewSeeking, RNSSplitScreenControllerDelegate>
 @end
 
 @implementation RNSSplitScreenComponentView {
@@ -162,6 +163,14 @@ namespace react = facebook::react;
   if (_isInvalidated) {
     _controller = nil;
   }
+}
+
+#pragma mark - RNSScrollViewSeeking
+
+- (void)registerDescendantScrollView:(UIScrollView *)scrollView fromMarker:(RNSScrollViewMarkerComponentView *)marker
+{
+  // UIKit observes this scroll view for scroll-edge appearance and header minimization.
+  [_controller setContentScrollView:scrollView forEdge:NSDirectionalRectEdgeAll];
 }
 
 #pragma mark - RNSStackScreenProviding
