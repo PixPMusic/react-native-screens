@@ -31,6 +31,7 @@ export type SearchBarCommands = {
   clearText: () => void;
   toggleCancelButton: (show: boolean) => void;
   setText: (text: string) => void;
+  setActive: (active: boolean) => void;
   cancelSearch: () => void;
 };
 
@@ -969,6 +970,7 @@ export interface SearchBarProps {
    * * `blur` - removes focus from the search bar
    * * `clearText` - removes any text present in the search bar input field
    * * `setText` - sets the search bar's content to given value
+   * * `setActive` - presents or dismisses iOS search without requesting keyboard focus
    * * `cancelSearch` - cancel search in search bar.
    * * `toggleCancelButton` - depending on passed boolean value, hides or shows cancel button (iOS only)
    */
@@ -1013,6 +1015,14 @@ export interface SearchBarProps {
    * @platform ios
    */
   cancelButtonText?: string | undefined;
+  /**
+   * Hides the cancel button, including while the search field is focused.
+   * Use when another control provides the search dismissal action.
+   * Defaults to `false`.
+   *
+   * @platform ios
+   */
+  cancelButtonHidden?: boolean | undefined;
   /**
    * Specifies whether the back button should close search bar's text input or not.
    *

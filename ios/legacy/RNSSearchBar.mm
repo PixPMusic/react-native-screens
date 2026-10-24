@@ -108,6 +108,7 @@ static id RNSAddObserverRemovedWithSearchField(
 @implementation RNSSearchBar {
   UISearchController *_controller;
   UIColor *_textColor;
+  BOOL _focusRequested;
 
   // We use those booleans to log a warning if user attempts to restore
   // default behavior after setting explicit value for the prop.
@@ -287,6 +288,17 @@ static id RNSAddObserverRemovedWithSearchField(
   [_controller.searchBar setValue:text forKey:@"cancelButtonText"];
 }
 
+- (void)setCancelButtonHidden:(BOOL)cancelButtonHidden
+{
+  _cancelButtonHidden = cancelButtonHidden;
+#if !TARGET_OS_TV
+  // Configure this before focus: changing the cancel control during activation
+  // rebuilds UIKit's integrated search field and can dismiss its keyboard.
+  [_controller.searchBar setShowsCancelButton:NO animated:NO];
+  _controller.automaticallyShowsCancelButton = !cancelButtonHidden;
+#endif
+}
+
 - (void)hideCancelButton
 {
 #if !TARGET_OS_TV
@@ -302,7 +314,7 @@ static id RNSAddObserverRemovedWithSearchField(
 - (void)showCancelButton
 {
 #if !TARGET_OS_TV
-  if (!_controller.automaticallyShowsCancelButton) {
+  if (!_cancelButtonHidden && !_controller.automaticallyShowsCancelButton) {
     [_controller.searchBar setShowsCancelButton:YES animated:YES];
   } else {
     // On iOS 13+ UISearchController automatically shows/hides cancel button
@@ -390,6 +402,7 @@ static id RNSAddObserverRemovedWithSearchField(
 #if !TARGET_OS_TV
 - (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar
 {
+  _focusRequested = NO;
   _controller.searchBar.text = @"";
   [self resignFirstResponder];
   [self hideCancelButton];
@@ -401,12 +414,33 @@ static id RNSAddObserverRemovedWithSearchField(
 
 - (void)blur
 {
+  _focusRequested = NO;
   [_controller.searchBar resignFirstResponder];
 }
 
 - (void)focus
 {
-  [_controller.searchBar becomeFirstResponder];
+  _focusRequested = YES;
+  // Fabric can attach search and request focus in the same mounting transaction.
+  __weak RNSSearchBar *weakSelf = self;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    RNSSearchBar *strongSelf = weakSelf;
+    if (strongSelf == nil || !strongSelf->_focusRequested) {
+      return;
+    }
+    strongSelf->_focusRequested = NO;
+#if !TARGET_OS_TV
+    // Integrated search replaces its field during layout. The configuration view
+    // is not mounted, so lay out its header's window before focusing that field.
+    id<RNSSearchBarNavigationItemDelegate> header = strongSelf.navigationItemDelegate;
+    if ([header isKindOfClass:UIView.class]) {
+      [((UIView *)header).window layoutIfNeeded];
+    }
+    [strongSelf->_controller.searchBar.searchTextField becomeFirstResponder];
+#else
+    [strongSelf->_controller.searchBar becomeFirstResponder];
+#endif
+  });
 }
 
 - (void)clearText
@@ -417,13 +451,23 @@ static id RNSAddObserverRemovedWithSearchField(
 - (void)toggleCancelButton:(BOOL)flag
 {
 #if !TARGET_OS_TV
-  [_controller.searchBar setShowsCancelButton:flag animated:YES];
+  [_controller.searchBar setShowsCancelButton:flag && !_cancelButtonHidden animated:YES];
 #endif
 }
 
 - (void)setText:(NSString *)text
 {
   [_controller.searchBar setText:text];
+}
+
+- (void)setActive:(BOOL)active
+{
+  if (!active) {
+    _focusRequested = NO;
+  }
+  // Search can remain expanded after the keyboard is dismissed or its host reappears.
+  // Becoming first responder belongs to the separate focus command.
+  _controller.active = active;
 }
 
 - (void)cancelSearch
@@ -443,6 +487,10 @@ static id RNSAddObserverRemovedWithSearchField(
 
   if (oldScreenProps.hideWhenScrolling != newScreenProps.hideWhenScrolling) {
     [self setHideWhenScrolling:newScreenProps.hideWhenScrolling];
+  }
+
+  if (oldScreenProps.cancelButtonHidden != newScreenProps.cancelButtonHidden) {
+    self.cancelButtonHidden = newScreenProps.cancelButtonHidden;
   }
 
   if (oldScreenProps.cancelButtonText != newScreenProps.cancelButtonText) {

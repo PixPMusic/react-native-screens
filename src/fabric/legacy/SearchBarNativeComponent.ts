@@ -56,6 +56,7 @@ export interface NativeProps extends ViewProps {
   obscureBackground?: CT.WithDefault<OptionalBoolean, 'undefined'>;
   hideNavigationBar?: CT.WithDefault<OptionalBoolean, 'undefined'>;
   cancelButtonText?: string | undefined;
+  cancelButtonHidden?: CT.WithDefault<boolean, false>;
   // TODO: implement these on iOS
   barTintColor?: ColorValue | undefined;
   tintColor?: ColorValue | undefined;
@@ -84,6 +85,10 @@ interface NativeCommands {
     flag: boolean,
   ) => void;
   setText: (instance: React.ComponentRef<ComponentType>, text: string) => void;
+  setActive: (
+    instance: React.ComponentRef<ComponentType>,
+    active: boolean,
+  ) => void;
   cancelSearch: (instance: React.ComponentRef<ComponentType>) => void;
 }
 
@@ -94,6 +99,7 @@ export const Commands: NativeCommands = codegenNativeCommands<NativeCommands>({
     'clearText',
     'toggleCancelButton',
     'setText',
+    'setActive',
     'cancelSearch',
   ],
 });

@@ -171,6 +171,11 @@ class SearchBarManager :
         view?.handleCancelSearchJsRequest()
     }
 
+    override fun setActive(
+        view: SearchBarView?,
+        active: Boolean,
+    ) = Unit
+
     // iOS only
 
     override fun setPlacement(
@@ -196,6 +201,11 @@ class SearchBarManager :
     override fun setHideNavigationBar(
         view: SearchBarView?,
         value: String?,
+    ) = Unit
+
+    override fun setCancelButtonHidden(
+        view: SearchBarView?,
+        value: Boolean,
     ) = Unit
 
     override fun setCancelButtonText(
