@@ -284,6 +284,26 @@ export interface SplitHostProps extends ViewProps {
    */
   preferredSplitBehavior?: SplitBehavior | undefined;
   /**
+   * @summary Overrides `preferredDisplayMode` while the split is taller than it is wide.
+   *
+   * The split picks between the two values natively as a rotation starts, so the column change
+   * animates with the rotation instead of after JS learns the new size. `automatic` keeps
+   * `preferredDisplayMode`.
+   *
+   * @platform ios
+   * @default automatic
+   */
+  portraitPreferredDisplayMode?: SplitDisplayMode | undefined;
+  /**
+   * @summary Overrides `preferredSplitBehavior` while the split is taller than it is wide.
+   *
+   * See `portraitPreferredDisplayMode`. `automatic` keeps `preferredSplitBehavior`.
+   *
+   * @platform ios
+   * @default automatic
+   */
+  portraitPreferredSplitBehavior?: SplitBehavior | undefined;
+  /**
    * @summary Specifies the background style of the primary view controller.
    *
    * On iOS 18 or lower, we always fall back to `none` which is a system default value. Since iOS 26 the system default value is `sidebar`.
