@@ -31,6 +31,16 @@ NS_ASSUME_NONNULL_BEGIN
              splitHostController:(RNSSplitHostController *)splitHostController
            appearanceCoordinator:(RNSSplitAppearanceCoordinator *)appearanceCoordinator;
 
+/**
+ * @brief Applies the split behavior and display mode for the size the split is transitioning to.
+ *
+ * Called as a size transition starts, so a change between the portrait and default values animates with that
+ * transition (e.g. a rotation) rather than after JS observes the new size.
+ */
+- (void)applyOrientationAppearanceFor:(id<RNSSplitHostAppearanceProvider>)provider
+                       withController:(RNSSplitHostController *)splitHostController
+                               toSize:(CGSize)size;
+
 @end
 
 NS_ASSUME_NONNULL_END
