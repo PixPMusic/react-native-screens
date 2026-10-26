@@ -3,15 +3,15 @@
 #import <React/RCTSurfaceTouchHandler.h>
 #import "RCTSurfaceTouchHandler+RNSUtility.h"
 #import "RNSContainer.h"
-#import "RNSDefines.h"
 #import "RNSContainerItem.h"
+#import "RNSDefines.h"
+#import "RNSHeaderCoordinator.h"
 #import "RNSLog.h"
 #import "RNSParentContainerItemRegistry.h"
 #import "RNSStackNavigationBar.h"
 #import "RNSStackOperation.h"
 #import "RNSStackScreenComponentEventEmitter.h"
 #import "RNSStackScreenComponentView.h"
-#import "RNSHeaderCoordinator.h"
 #import "RNSViewFrameChangeDelegate.h"
 
 @interface RNSStackNavigationController ()
@@ -312,26 +312,47 @@
   }
 
   _performingReactUpdate = YES;
-  for ([[maybe_unused]] RNSPopOperation *op in _pendingPopOperations) {
-    RCTAssert(
-        self.allowsEmptyStack ? !self.isStackEmpty : [self.viewControllers count] > 1,
-        @"[RNScreens] Attempt to pop last screen from the stack");
-    RCTAssert(self.topViewController == op.stackScreen.controller, @"[RNScreens] Attempt to pop non-top screen");
-    if (self.allowsEmptyStack && self.viewControllers.count == 1) {
-      // UIKit cannot show an empty nested navigation controller when the split is collapsed.
-      [self setViewControllers:@[ _emptyStackController ] animated:NO];
-    } else {
-      // Intermediate pops must finish synchronously before starting the final transition.
-      [self popViewControllerAnimated:op == _pendingPopOperations.lastObject];
+  if (_pendingPopOperations.count > 0 && _pendingPushOperations.count > 0) {
+    // One React replacement must be one UIKit transition. Starting a push while
+    // the final pop animates can leave the old screen visible with the new stack.
+    NSMutableArray<UIViewController *> *controllers = [self.viewControllers mutableCopy];
+    for (RNSPopOperation *op in _pendingPopOperations) {
+      RCTAssert(
+          self.allowsEmptyStack ? controllers.count > 0 : controllers.count > 1,
+          @"[RNScreens] Attempt to pop last screen from the stack");
+      RCTAssert(controllers.lastObject == op.stackScreen.controller, @"[RNScreens] Attempt to pop non-top screen");
+      [controllers removeLastObject];
     }
-  }
+    if (controllers.count > 0 && controllers.lastObject == _emptyStackController) {
+      [controllers removeLastObject];
+    }
+    for (RNSPushOperation *op in _pendingPushOperations) {
+      [controllers addObject:op.stackScreen.controller];
+    }
+    [self prepareToolbarForController:controllers.lastObject];
+    [self setViewControllers:controllers animated:YES];
+  } else {
+    for ([[maybe_unused]] RNSPopOperation *op in _pendingPopOperations) {
+      RCTAssert(
+          self.allowsEmptyStack ? !self.isStackEmpty : [self.viewControllers count] > 1,
+          @"[RNScreens] Attempt to pop last screen from the stack");
+      RCTAssert(self.topViewController == op.stackScreen.controller, @"[RNScreens] Attempt to pop non-top screen");
+      if (self.allowsEmptyStack && self.viewControllers.count == 1) {
+        // UIKit cannot show an empty nested navigation controller when the split is collapsed.
+        [self setViewControllers:@[ _emptyStackController ] animated:NO];
+      } else {
+        // Intermediate pops must finish synchronously before starting the final transition.
+        [self popViewControllerAnimated:op == _pendingPopOperations.lastObject];
+      }
+    }
 
-  for (RNSPushOperation *op in _pendingPushOperations) {
-    if (self.allowsEmptyStack && self.isStackEmpty) {
-      // The first screen is the root, so the placeholder must not appear in its back stack.
-      [self setViewControllers:@[ op.stackScreen.controller ] animated:NO];
-    } else {
-      [self pushViewController:op.stackScreen.controller animated:op == _pendingPushOperations.lastObject];
+    for (RNSPushOperation *op in _pendingPushOperations) {
+      if (self.allowsEmptyStack && self.isStackEmpty) {
+        // The first screen is the root, so the placeholder must not appear in its back stack.
+        [self setViewControllers:@[ op.stackScreen.controller ] animated:NO];
+      } else {
+        [self pushViewController:op.stackScreen.controller animated:op == _pendingPushOperations.lastObject];
+      }
     }
   }
 
