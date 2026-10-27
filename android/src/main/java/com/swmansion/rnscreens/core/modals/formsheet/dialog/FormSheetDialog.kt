@@ -28,7 +28,12 @@ internal class FormSheetDialog(
     context: Context,
     activityProvider: () -> Activity?,
 ) : BottomSheetDialog(context) {
-    private val posture = FormSheetPostureObserver(activityProvider) { window?.decorView?.requestLayout() }
+    private val posture =
+        FormSheetPostureObserver(activityProvider) {
+            // A posture change keeps the window bounds, so invalidate both measurement branches.
+            availableHeightProvider.requestLayout()
+            findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.requestLayout()
+        }
 
     internal fun interface CancelRequestInterceptor {
         /**

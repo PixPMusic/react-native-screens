@@ -27,6 +27,8 @@ internal class ScreensCoordinatorLayout(
         PointerEventsBoxNoneImpl(),
     )
 
+    private var lastSheetWidth = 0
+
     private val posture = FormSheetPostureObserver({ fragment.screen.reactContext.currentActivity }) { requestLayout() }
 
     override fun onAttachedToWindow() {
@@ -161,7 +163,10 @@ internal class ScreensCoordinatorLayout(
         super.onLayout(changed, l, t, r, b)
 
         if (fragment.screen.usesFormSheetPresentation()) {
-            fragment.screen.onBottomSheetBehaviorDidLayout(changed)
+            val widthChanged = fragment.screen.width != lastSheetWidth
+            lastSheetWidth = fragment.screen.width
+            // The hinge can resize the sheet without resizing its workspace-sized coordinator.
+            fragment.screen.onBottomSheetBehaviorDidLayout(changed || widthChanged)
         }
     }
 }
