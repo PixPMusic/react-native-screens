@@ -1,12 +1,15 @@
 package com.swmansion.rnscreens.legacy.stack.views
 
 import android.content.Context
+import android.content.res.Configuration
 import android.view.Gravity
 import android.view.WindowInsets
 import android.view.animation.Animation
 import android.view.animation.AnimationSet
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import com.facebook.react.uimanager.ReactPointerEventsView
+import com.swmansion.rnscreens.core.modals.formsheet.FormSheetPlacement
+import com.swmansion.rnscreens.core.modals.formsheet.FormSheetPostureObserver
 import com.swmansion.rnscreens.legacy.PointerEventsBoxNoneImpl
 import com.swmansion.rnscreens.legacy.ScreenStackFragment
 import com.swmansion.rnscreens.legacy.bottomsheet.usesFormSheetPresentation
@@ -23,6 +26,18 @@ internal class ScreensCoordinatorLayout(
         fragment,
         PointerEventsBoxNoneImpl(),
     )
+
+    private val posture = FormSheetPostureObserver({ fragment.screen.reactContext.currentActivity }) { requestLayout() }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (fragment.screen.usesFormSheetPresentation()) posture.start()
+    }
+
+    override fun onDetachedFromWindow() {
+        posture.stop()
+        super.onDetachedFromWindow()
+    }
 
     internal var blockFrameworkTransitionFinalization = false
     internal var needsTransitionFinalization = false
@@ -119,14 +134,19 @@ internal class ScreensCoordinatorLayout(
         heightMeasureSpec: Int,
     ) {
         if (fragment.screen.usesFormSheetPresentation()) {
-            // Match the Material width used by the standalone FormSheet dialog.
-            val params = fragment.screen.layoutParams as LayoutParams
-            params.width =
-                minOf(
+            if (isAttachedToWindow) posture.start()
+            val origin = IntArray(2).also { getLocationInWindow(it) }
+            val placement =
+                FormSheetPlacement.resolve(
                     MeasureSpec.getSize(widthMeasureSpec),
                     resources.getDimensionPixelSize(com.google.android.material.R.dimen.material_bottom_sheet_max_width),
+                    posture.hingeLeft?.minus(origin[0]),
+                    resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT,
                 )
-            params.gravity = Gravity.CENTER_HORIZONTAL
+            val params = fragment.screen.layoutParams as LayoutParams
+            params.width = placement.width
+            params.leftMargin = placement.left
+            params.gravity = Gravity.LEFT
         }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
     }
